@@ -152,3 +152,7 @@ coverage/
 # Script files with sensitive data
 create-test-user.js
 create-user-in-server-db.js
+
+# Validation and security files
+Public/validation-key.txt
+validation-key.txt
