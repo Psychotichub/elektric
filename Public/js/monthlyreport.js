@@ -50,7 +50,7 @@ async function initMonthlyReport() {
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             const headers = typeof authHeader === 'function' ? authHeader() : {};
             
-            const response = await fetchFunc(`/total-price?dateRange=${selectedDateRange}`, {
+            const response = await fetchFunc(`/api/user/total-prices?dateRange=${selectedDateRange}`, {
                 headers: headers
             });
             
@@ -107,7 +107,7 @@ async function initMonthlyReport() {
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             const headers = typeof authHeader === 'function' ? authHeader() : {};
             
-            const response = await fetchFunc('/total-price', {
+            const response = await fetchFunc('/api/user/total-prices', {
                 headers: headers
             });
             

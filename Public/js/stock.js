@@ -36,7 +36,7 @@ function initStock() {
             // Use authenticatedFetch if available, fall back to fetch with auth headers
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             
-            const response = await fetchFunc('/daily-reports', {
+            const response = await fetchFunc('/api/user/daily-reports', {
                 headers: typeof authHeader === 'function' ? authHeader() : {}
             });
 
@@ -56,7 +56,7 @@ function initStock() {
             // Use authenticatedFetch if available, fall back to fetch with auth headers
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             
-            const response = await fetchFunc('/received', {
+            const response = await fetchFunc('/api/user/received', {
                 headers: typeof authHeader === 'function' ? authHeader() : {}
             });
             

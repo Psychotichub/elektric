@@ -53,10 +53,10 @@ async function initTotalPrice() {
             const headers = typeof authHeader === 'function' ? authHeader() : {};
 
             const [materialResponse, priceResponse] = await Promise.all([
-                fetchFunc(`/daily-reports/date-range?start=${formattedStartDate}&end=${formattedEndDate}`, {
+                fetchFunc(`/api/user/daily-reports/range?start=${formattedStartDate}&end=${formattedEndDate}`, {
                     headers: headers
                 }),
-                fetchFunc(`/material-submit`, {
+                fetchFunc(`/api/user/materials`, {
                     headers: headers
                 }),
             ]);
@@ -258,7 +258,7 @@ async function initTotalPrice() {
                 
                 // Send all materials in a single request
                 console.log('Saving materials:', materials);
-                const response = await fetchFunc('/total-price', {
+                const response = await fetchFunc('/api/user/total-prices', {
                     method: 'POST',
                     headers: headers,
                     body: JSON.stringify({ materials })

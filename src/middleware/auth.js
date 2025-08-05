@@ -42,6 +42,9 @@ exports.authenticate = async (req, res, next) => {
   }
 };
 
+// Alias for authenticateToken (for compatibility)
+exports.authenticateToken = exports.authenticate;
+
 // Authorize middleware - check if user has admin role
 exports.isAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {

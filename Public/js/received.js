@@ -48,7 +48,7 @@ function initReceived() {
             // Use authenticatedFetch if available, fall back to fetch with auth headers
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             
-            const response = await fetchFunc('/material-submit', {
+            const response = await fetchFunc('/api/user/materials', {
                 headers: typeof authHeader === 'function' ? authHeader() : {}
             });
             
@@ -189,7 +189,8 @@ function initReceived() {
             quantity: Number(quantity),
             unit,
             notes,
-            date
+            date,
+            supplier: 'Default Supplier' // Add default supplier
         };
 
         try {
@@ -199,7 +200,7 @@ function initReceived() {
             let response;
             if (saveButton.dataset.id) {
                 const id = saveButton.dataset.id;
-                response = await fetchFunc(`/received/${id}`, {
+                response = await fetchFunc(`/api/user/received/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -210,13 +211,13 @@ function initReceived() {
                 saveButton.textContent = 'Save';
                 delete saveButton.dataset.id;
             } else {
-                response = await fetchFunc('/received', {
+                response = await fetchFunc('/api/user/received', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         ...(typeof authHeader === 'function' ? authHeader() : {})
                     },
-                    body: JSON.stringify({ materials: [data] })
+                    body: JSON.stringify(data)
                 });
             }
             const result = await response.json();
@@ -245,7 +246,8 @@ function initReceived() {
                 quantity: Number(quantity),
                 unit: unit.trim(),
                 notes: cells[2].textContent.trim(),
-                date: dateInput.value
+                date: dateInput.value,
+                supplier: 'Default Supplier' // Add default supplier
             };
         });
 
@@ -258,17 +260,22 @@ function initReceived() {
             // Use authenticatedFetch for the API call
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             
-            const response = await fetchFunc('/received', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(typeof authHeader === 'function' ? authHeader() : {})
-                },
-                body: JSON.stringify({ materials: dataToSend }),
-            });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message);
+            // Send each item individually since the backend expects single items
+            for (const item of dataToSend) {
+                const response = await fetchFunc('/api/user/received', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(typeof authHeader === 'function' ? authHeader() : {})
+                    },
+                    body: JSON.stringify(item)
+                });
+                
+                if (!response.ok) {
+                    const result = await response.json();
+                    throw new Error(result.message);
+                }
+            }
 
             alert('Data sent successfully!');
             dataTable.innerHTML = '';
@@ -284,7 +291,7 @@ function initReceived() {
         try {
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             
-            const response = await fetchFunc(`/received/date/${date}`, {
+            const response = await fetchFunc(`/api/user/received/date/${date}`, {
                 headers: typeof authHeader === 'function' ? authHeader() : {}
             });
             
@@ -357,7 +364,7 @@ function initReceived() {
             try {
                 const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
                 
-                const response = await fetchFunc(`/received/${id}`, {
+                const response = await fetchFunc(`/api/user/received/${id}`, {
                     method: 'DELETE',
                     headers: typeof authHeader === 'function' ? authHeader() : {}
                 });

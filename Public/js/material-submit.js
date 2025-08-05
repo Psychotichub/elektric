@@ -7,7 +7,7 @@ async function initMaterialSubmit() {
         return;
     }
 
-    // Check if user has permission to add materials
+    // Check if user has permission to add materials (admin only)
     const canAddMaterial = isAdmin();
     
     const submitButton = document.getElementById('submit-btn');
@@ -24,12 +24,17 @@ async function initMaterialSubmit() {
     searchDropdown.id = 'search-dropdown';
     searchInput.parentNode.appendChild(searchDropdown);
 
-    // Hide action column header for non-admin users
+    // Hide price columns and action column for non-admin users
     if (!canAddMaterial) {
         const tableHeaders = document.querySelectorAll('#submitted-table th');
         if (tableHeaders.length > 0) {
-            // Hide the last header which is "Action"
-            tableHeaders[tableHeaders.length - 1].style.display = 'none';
+            // Hide price columns (Material Price, Labor Price, Total Price) and Action column
+            tableHeaders.forEach((header, index) => {
+                const headerText = header.textContent.toLowerCase();
+                if (headerText.includes('price') || headerText.includes('action')) {
+                    header.style.display = 'none';
+                }
+            });
         }
     }
 
@@ -39,15 +44,30 @@ async function initMaterialSubmit() {
         materialForm.style.display = 'none';
         const noPermissionMessage = document.createElement('div');
         noPermissionMessage.className = 'alert alert-warning';
-        noPermissionMessage.textContent = 'You do not have permission to add materials. Please contact an administrator.';
+        noPermissionMessage.innerHTML = `
+            <h3>Access Restricted</h3>
+            <p>Only site administrators can manage materials with pricing information.</p>
+            <p>You can view material names and units, and use existing materials from your site for daily reports and received reports.</p>
+            <p><strong>Note:</strong> Materials are shared across all users in your site. Pricing information is only visible to administrators.</p>
+        `;
         materialForm.parentNode.insertBefore(noPermissionMessage, materialForm);
+    } else if (materialForm && canAddMaterial) {
+        // Add info message for admin users
+        const adminInfoMessage = document.createElement('div');
+        adminInfoMessage.className = 'alert alert-info';
+        adminInfoMessage.innerHTML = `
+            <h4>Site Material Management</h4>
+            <p><strong>Note:</strong> Materials you add, edit, or delete will be shared across all users in your site.</p>
+            <p>All users in your site can use these materials for their daily reports and received reports.</p>
+        `;
+        materialForm.parentNode.insertBefore(adminInfoMessage, materialForm);
     }
 
     let materialsList = [];
 
     async function loadMaterials() {
         try {
-            const response = await authenticatedFetch('/material-submit');
+            const response = await authenticatedFetch('/api/user/materials');
             const materials = await response.json();
             if (response.ok) {
                 submittedTableBody.innerHTML = '';
@@ -81,7 +101,7 @@ async function initMaterialSubmit() {
             const isEditing = submitButton.dataset.editing;
             if (isEditing) {
                 try {
-                    const response = await fetch('/material-submit', {
+                    const response = await authenticatedFetch('/api/user/materials', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
@@ -99,14 +119,18 @@ async function initMaterialSubmit() {
                         resetForm();
                     } else {
                         const errorResult = await response.json();
-                        alert('Error: ' + errorResult.message);
+                        if (response.status === 403) {
+                            alert('Access Denied: ' + errorResult.message);
+                        } else {
+                            alert('Error: ' + errorResult.message);
+                        }
                     }
                 } catch (error) {
                     alert('Error updating data on server.');
                 }
             } else {
                 try {
-                    const checkResponse = await fetch(`/material-submit/check/${materialName}`);
+                    const checkResponse = await authenticatedFetch(`/api/user/materials/check/${materialName}`);
                     const checkResult = await checkResponse.json();
                     if (checkResult.exists) {
                         alert('Material name already exists.');
@@ -118,7 +142,7 @@ async function initMaterialSubmit() {
                 }
 
                 try {
-                    const response = await authenticatedFetch('/material-submit', {
+                    const response = await authenticatedFetch('/api/user/materials', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -144,7 +168,11 @@ async function initMaterialSubmit() {
                         submittedTable.classList.remove('hidden');
                         alert('Material added successfully.');
                     } else {
-                        alert(`Error: ${result.message}`);
+                        if (response.status === 403) {
+                            alert('Access Denied: ' + result.message);
+                        } else {
+                            alert(`Error: ${result.message}`);
+                        }
                     }
                 } catch (error) {
                     console.error("Error submitting material:", error);
@@ -208,23 +236,24 @@ async function initMaterialSubmit() {
         const unitCell = document.createElement('td');
         unitCell.textContent = unit;
         
-        const materialPriceCell = document.createElement('td');
-        materialPriceCell.textContent = materialPrice.toFixed(2) + ' €';
-        
-        const laborPriceCell = document.createElement('td');
-        laborPriceCell.textContent = laborPrice.toFixed(2) + ' €';
-        
-        const totalPriceCell = document.createElement('td');
-        totalPriceCell.textContent = (materialPrice + laborPrice).toFixed(2) + ' €';
-        
-        row.appendChild(nameCell);
-        row.appendChild(unitCell);
-        row.appendChild(materialPriceCell);
-        row.appendChild(laborPriceCell);
-        row.appendChild(totalPriceCell);
-        
-        // Only add actions cell for admin users
+        // Only add price cells for admin users
         if (canAddMaterial) {
+            const materialPriceCell = document.createElement('td');
+            materialPriceCell.textContent = materialPrice.toFixed(2) + ' €';
+            
+            const laborPriceCell = document.createElement('td');
+            laborPriceCell.textContent = laborPrice.toFixed(2) + ' €';
+            
+            const totalPriceCell = document.createElement('td');
+            totalPriceCell.textContent = (materialPrice + laborPrice).toFixed(2) + ' €';
+            
+            row.appendChild(nameCell);
+            row.appendChild(unitCell);
+            row.appendChild(materialPriceCell);
+            row.appendChild(laborPriceCell);
+            row.appendChild(totalPriceCell);
+            
+            // Add actions cell for admin users
             const actionsCell = document.createElement('td');
             
             // Add edit button
@@ -254,7 +283,7 @@ async function initMaterialSubmit() {
             deleteButton.addEventListener('click', async () => {
                 if (confirm(`Are you sure you want to delete ${materialName}?`)) {
                     try {
-                        const response = await authenticatedFetch(`/material-submit/${encodeURIComponent(materialName)}`, {
+                        const response = await authenticatedFetch(`/api/user/materials/${encodeURIComponent(materialName)}`, {
                             method: 'DELETE'
                         });
                         
@@ -266,7 +295,11 @@ async function initMaterialSubmit() {
                             updateMaterialList();
                         } else {
                             const result = await response.json();
-                            alert(`Error: ${result.message}`);
+                            if (response.status === 403) {
+                                alert('Access Denied: ' + result.message);
+                            } else {
+                                alert(`Error: ${result.message}`);
+                            }
                         }
                     } catch (error) {
                         console.error("Error deleting material:", error);
@@ -277,6 +310,10 @@ async function initMaterialSubmit() {
             actionsCell.appendChild(deleteButton);
             
             row.appendChild(actionsCell);
+        } else {
+            // For non-admin users, only show name and unit
+            row.appendChild(nameCell);
+            row.appendChild(unitCell);
         }
         
         submittedTableBody.appendChild(row);

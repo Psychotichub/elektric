@@ -57,7 +57,7 @@ function initDailyReport() {
             // Use authenticatedFetch if available, fall back to fetch with auth headers
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             
-            const response = await fetchFunc('/material-submit', {
+            const response = await fetchFunc('/api/user/materials', {
                 headers: typeof authHeader === 'function' ? authHeader() : {}
             });
             
@@ -211,7 +211,7 @@ function initDailyReport() {
             let response;
             if (saveButton.dataset.id) {
                 const id = saveButton.dataset.id;
-                response = await fetchFunc(`/daily-reports/${id}`, {
+                response = await fetchFunc(`/api/user/daily-reports/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -222,7 +222,7 @@ function initDailyReport() {
                 saveButton.textContent = 'Save';
                 delete saveButton.dataset.id;
             } else {
-                response = await fetchFunc('/daily-reports', {
+                response = await fetchFunc('/api/user/daily-reports', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -272,13 +272,13 @@ function initDailyReport() {
             // Use authenticatedFetch if available, fall back to fetch with auth headers
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             
-            const response = await fetchFunc('/daily-reports', {
+            const response = await fetchFunc('/api/user/daily-reports', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     ...(typeof authHeader === 'function' ? authHeader() : {})
                 },
-                body: JSON.stringify({ materials: dataToSend }),
+                body: JSON.stringify({ materials: dataToSend })
             });
 
             const result = await response.json();
@@ -300,7 +300,7 @@ function initDailyReport() {
             // Use authenticatedFetch if available, fall back to fetch with auth headers
             const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
             
-            const response = await fetchFunc(`/daily-reports/date/${date}`, {
+            const response = await fetchFunc(`/api/user/daily-reports/date/${date}`, {
                 headers: typeof authHeader === 'function' ? authHeader() : {}
             });
             
@@ -409,7 +409,7 @@ function initDailyReport() {
                 // Use authenticatedFetch if available, fall back to fetch with auth headers
                 const fetchFunc = typeof authenticatedFetch === 'function' ? authenticatedFetch : fetch;
                 
-                const response = await fetchFunc(`/daily-reports/${id}`, {
+                const response = await fetchFunc(`/api/user/daily-reports/${id}`, {
                     method: 'DELETE',
                     headers: typeof authHeader === 'function' ? authHeader() : {}
                 });

@@ -10,6 +10,8 @@ exports.register = async (req, res) => {
   try {
     const { username, password, role, site, company } = req.body;
 
+    console.log('🔍 Registration attempt:', { username, site, company, role });
+
     // Check if user already exists
     const existingUser = await User.findOne({ username });
     if (existingUser) {
@@ -56,10 +58,15 @@ exports.register = async (req, res) => {
     });
 
     await user.save();
+    console.log('✅ User saved to main database');
+
+
 
     // Return user without password
     const userResponse = user.toObject();
     delete userResponse.password;
+
+    console.log('✅ Registration completed successfully for:', username);
 
     res.status(201).json({
       success: true,
@@ -135,6 +142,8 @@ exports.login = async (req, res) => {
         id: user._id, 
         username: user.username, 
         role: user.role,
+        site: user.site,
+        company: user.company,
         // Add timestamp to help with token refreshing
         iat: Math.floor(Date.now() / 1000)
       },
