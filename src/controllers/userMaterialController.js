@@ -1,15 +1,11 @@
-const Material = require('../models/material');
+const { getSiteModels } = require('../models/siteDatabase');
 
 // Get all materials for the user's site
 const getMaterials = async (req, res) => {
     try {
-        // Filter by user's site and company (ALL users including admins)
-        const filter = {
-            site: req.user.site,
-            company: req.user.company
-        };
-        
-        const materials = await Material.find(filter);
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
+        const materials = await siteModels.SiteMaterial.find();
         res.json(materials);
     } catch (error) {
         console.error('Error getting materials:', error);
@@ -28,24 +24,21 @@ const addMaterial = async (req, res) => {
 
     const { materialName, unit, materialPrice, laborPrice } = req.body;
     try {
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
+        
         // Check if material exists in the same site
-        const existingMaterial = await Material.findOne({ 
-            materialName, 
-            site: req.user.site, 
-            company: req.user.company 
-        });
+        const existingMaterial = await siteModels.SiteMaterial.findOne({ materialName });
         
         if (existingMaterial) {
             return res.status(400).json({ message: 'Material already exists in this site.' });
         }
 
-        const material = new Material({ 
+        const material = new siteModels.SiteMaterial({ 
             materialName, 
             unit, 
             materialPrice, 
-            laborPrice,
-            site: req.user.site,
-            company: req.user.company
+            laborPrice
         });
         await material.save();
         res.status(201).json(material);
@@ -59,14 +52,11 @@ const addMaterial = async (req, res) => {
 const checkMaterialExists = async (req, res) => {
     const { materialName } = req.params;
     try {
-        // Check if material exists in the user's site
-        const filter = { 
-            materialName,
-            site: req.user.site,
-            company: req.user.company
-        };
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
         
-        const material = await Material.findOne(filter);
+        // Check if material exists in the user's site
+        const material = await siteModels.SiteMaterial.findOne({ materialName });
         res.json({ exists: !!material });
     } catch (error) {
         console.error('Error checking material existence:', error);
@@ -85,27 +75,19 @@ const updateMaterial = async (req, res) => {
 
     const { originalMaterialName, materialName, unit, materialPrice, laborPrice } = req.body;
     try {
-        // Build filter to ensure user can only update their own site's materials
-        const filter = { 
-            materialName: originalMaterialName,
-            site: req.user.site,
-            company: req.user.company
-        };
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
 
         // Check if the new material name already exists in the same site
         if (materialName !== originalMaterialName) {
-            const existingMaterial = await Material.findOne({ 
-                materialName, 
-                site: req.user.site, 
-                company: req.user.company 
-            });
+            const existingMaterial = await siteModels.SiteMaterial.findOne({ materialName });
             if (existingMaterial) {
                 return res.status(400).json({ message: 'Material name already exists in this site.' });
             }
         }
 
-        const material = await Material.findOneAndUpdate(
-            filter,
+        const material = await siteModels.SiteMaterial.findOneAndUpdate(
+            { materialName: originalMaterialName },
             { materialName, unit, materialPrice, laborPrice },
             { new: true }
         );
@@ -132,14 +114,10 @@ const deleteMaterial = async (req, res) => {
 
     const { materialName } = req.params;
     try {
-        // Build filter to ensure user can only delete their own site's materials
-        const filter = { 
-            materialName,
-            site: req.user.site,
-            company: req.user.company
-        };
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
         
-        await Material.findOneAndDelete(filter);
+        await siteModels.SiteMaterial.findOneAndDelete({ materialName });
         res.status(200).json({ message: 'Material deleted successfully' });
     } catch (error) {
         console.error('Error deleting material:', error);
@@ -151,14 +129,10 @@ const deleteMaterial = async (req, res) => {
 const searchMaterial = async (req, res) => {
     const { materialName } = req.params;
     try {
-        // Build filter to include user's site
-        const filter = { 
-            materialName,
-            site: req.user.site,
-            company: req.user.company
-        };
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
         
-        const material = await Material.findOne(filter);
+        const material = await siteModels.SiteMaterial.findOne({ materialName });
         if (material) {
             res.json(material);
         } else {

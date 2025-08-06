@@ -1,27 +1,21 @@
 const User = require('../models/user');
-const DailyReport = require('../models/dailyreport');
-const Material = require('../models/material');
-const Received = require('../models/received');
-const TotalPrice = require('../models/totalPrice');
-const MonthlyReport = require('../models/montlyreport');
+const { getSiteModels } = require('../models/siteDatabase');
 
 // Get user's own company and site details
 exports.getUserSiteDetails = async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    // Get user details
     const user = await User.findById(userId).select('-password');
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Get statistics for user's site
-    const siteStats = await getSiteStatistics(user.site, user.company);
-
+    // Get site-specific models
+    const siteModels = await getSiteModels(user.site, user.company);
+    
+    // Get statistics from site-specific database
+    const siteStats = await getSiteStatistics(siteModels);
+    
     res.status(200).json({
       success: true,
       userDetails: {
@@ -33,71 +27,36 @@ exports.getUserSiteDetails = async (req, res) => {
       },
       siteStatistics: siteStats
     });
-
   } catch (error) {
     console.error('Get user site details error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 
-// Helper function to get site statistics
-async function getSiteStatistics(site, company) {
+// Helper function to get site statistics from site-specific database
+async function getSiteStatistics(siteModels) {
   try {
-    const dailyReportsCount = await DailyReport.countDocuments({ site, company });
-    const materialsCount = await Material.countDocuments({ site, company });
-    const receivedItemsCount = await Received.countDocuments({ site, company });
-    const totalPriceRecordsCount = await TotalPrice.countDocuments({ site, company });
-    const monthlyReportsCount = await MonthlyReport.countDocuments({ site, company });
-
-    // Get recent activity (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const recentDailyReports = await DailyReport.countDocuments({
-      site,
-      company,
-      date: { $gte: thirtyDaysAgo }
-    });
-
-    const recentReceivedItems = await Received.countDocuments({
-      site,
-      company,
-      date: { $gte: thirtyDaysAgo }
-    });
+    const dailyReportsCount = await siteModels.SiteDailyReport.countDocuments();
+    const materialsCount = await siteModels.SiteMaterial.countDocuments();
+    const receivedItemsCount = await siteModels.SiteReceived.countDocuments();
+    const totalPricesCount = await siteModels.SiteTotalPrice.countDocuments();
+    const monthlyReportsCount = await siteModels.SiteMonthlyReport.countDocuments();
 
     return {
-      totalRecords: {
-        dailyReports: dailyReportsCount,
-        materials: materialsCount,
-        receivedItems: receivedItemsCount,
-        totalPriceRecords: totalPriceRecordsCount,
-        monthlyReports: monthlyReportsCount
-      },
-      recentActivity: {
-        dailyReports: recentDailyReports,
-        receivedItems: recentReceivedItems,
-        period: 'Last 30 days'
-      }
+      dailyReports: dailyReportsCount,
+      materials: materialsCount,
+      receivedItems: receivedItemsCount,
+      totalPrices: totalPricesCount,
+      monthlyReports: monthlyReportsCount
     };
   } catch (error) {
     console.error('Error getting site statistics:', error);
     return {
-      totalRecords: {
-        dailyReports: 0,
-        materials: 0,
-        receivedItems: 0,
-        totalPriceRecords: 0,
-        monthlyReports: 0
-      },
-      recentActivity: {
-        dailyReports: 0,
-        receivedItems: 0,
-        period: 'Last 30 days'
-      }
+      dailyReports: 0,
+      materials: 0,
+      receivedItems: 0,
+      totalPrices: 0,
+      monthlyReports: 0
     };
   }
 } 

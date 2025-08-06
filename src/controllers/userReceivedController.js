@@ -1,15 +1,11 @@
-const Received = require('../models/received');
+const { getSiteModels } = require('../models/siteDatabase');
 
 // Get all received items for the user's site
 const getReceivedItems = async (req, res) => {
     try {
-        // Filter by user's site and company (ALL users including admins)
-        const filter = {
-            site: req.user.site,
-            company: req.user.company
-        };
-        
-        const receivedItems = await Received.find(filter);
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
+        const receivedItems = await siteModels.SiteReceived.find();
         res.status(200).json(receivedItems);
     } catch (error) {
         console.error('Error getting received items:', error);
@@ -26,15 +22,11 @@ const addReceivedItem = async (req, res) => {
     }
 
     try {
-        // Add site and company information to each material
-        const materialsWithSite = materials.map(material => ({
-            ...material,
-            site: req.user.site,
-            company: req.user.company
-        }));
-
-        // Create new received items
-        const newReceivedItems = await Received.insertMany(materialsWithSite);
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
+        
+        // Create new received items in site-specific database
+        const newReceivedItems = await siteModels.SiteReceived.insertMany(materials);
         res.status(201).json(newReceivedItems);
     } catch (error) {
         console.error('Error adding received items:', error);
@@ -52,16 +44,12 @@ const updateReceivedItem = async (req, res) => {
     }
 
     try {
-        // Build filter to ensure user can only update their own site's data
-        const filter = { 
-            _id: id,
-            site: req.user.site,
-            company: req.user.company
-        };
-
-        // Find and update the received item by ID
-        const updatedReceivedItem = await Received.findOneAndUpdate(
-            filter,
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
+        
+        // Find and update the received item by ID in site-specific database
+        const updatedReceivedItem = await siteModels.SiteReceived.findByIdAndUpdate(
+            id,
             { date, materialName, quantity, supplier, notes, location },
             { new: true, runValidators: true }
         );
@@ -82,14 +70,10 @@ const deleteReceivedItem = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // Build filter to ensure user can only delete their own site's data
-        const filter = { 
-            _id: id,
-            site: req.user.site,
-            company: req.user.company
-        };
-
-        const deletedReceivedItem = await Received.findOneAndDelete(filter);
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
+        
+        const deletedReceivedItem = await siteModels.SiteReceived.findByIdAndDelete(id);
 
         if (!deletedReceivedItem) {
             return res.status(404).json({ message: 'Received item not found' });
@@ -106,15 +90,13 @@ const deleteReceivedItem = async (req, res) => {
 const getReceivedItemsByDate = async (req, res) => {
     const { date } = req.params;
     try {
-        // Build filter to include user's site
-        const filter = { 
-            date: new Date(date).toLocaleDateString('en-CA').split('T')[0],
-            site: req.user.site,
-            company: req.user.company
-        };
-
-        // Fetch received items by date
-        const receivedItems = await Received.find(filter);
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
+        
+        // Fetch received items by date from site-specific database
+        const receivedItems = await siteModels.SiteReceived.find({ 
+            date: new Date(date).toLocaleDateString('en-CA').split('T')[0] 
+        });
         res.status(200).json(receivedItems);
     } catch (error) {
         console.error('Error getting received items by date:', error);
@@ -126,18 +108,16 @@ const getReceivedItemsByDate = async (req, res) => {
 const getReceivedItemsByDateRange = async (req, res) => {
     const { start, end } = req.query;
     try {
-        // Build filter to include user's site
-        const filter = {
+        // Get site-specific models
+        const siteModels = await getSiteModels(req.user.site, req.user.company);
+        
+        // Fetch received items by date range from site-specific database
+        const receivedItems = await siteModels.SiteReceived.find({
             date: {
                 $gte: new Date(start).toISOString(),
                 $lte: new Date(end).toISOString()
-            },
-            site: req.user.site,
-            company: req.user.company
-        };
-
-        // Fetch received items by date range
-        const receivedItems = await Received.find(filter);
+            }
+        });
         res.status(200).json(receivedItems);
     } catch (error) {
         console.error('Error getting received items by date range:', error);
