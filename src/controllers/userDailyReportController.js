@@ -25,12 +25,31 @@ const addDailyReport = async (req, res) => {
         // Get site-specific models
         const siteModels = await getSiteModels(req.user.site, req.user.company);
         
+        // Process each material to add pricing information
+        const processedMaterials = await Promise.all(materials.map(async (material) => {
+            // Find the material in the site-specific database to get pricing
+            const materialData = await siteModels.SiteMaterial.findOne({ 
+                materialName: material.materialName 
+            });
+            
+            if (!materialData) {
+                throw new Error(`Material '${material.materialName}' not found in site database`);
+            }
+            
+            // Add pricing information to the daily report
+            return {
+                ...material,
+                materialPrice: materialData.materialPrice,
+                labourPrice: materialData.laborPrice
+            };
+        }));
+        
         // Create new daily report documents in site-specific database
-        const newDailyReports = await siteModels.SiteDailyReport.insertMany(materials);
+        const newDailyReports = await siteModels.SiteDailyReport.insertMany(processedMaterials);
         res.status(201).json(newDailyReports);
     } catch (error) {
         console.error('Error adding daily reports:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 };
 
@@ -47,10 +66,24 @@ const updateDailyReport = async (req, res) => {
         // Get site-specific models
         const siteModels = await getSiteModels(req.user.site, req.user.company);
         
+        // Find the material to get pricing information
+        const materialData = await siteModels.SiteMaterial.findOne({ materialName });
+        if (!materialData) {
+            return res.status(400).json({ message: `Material '${materialName}' not found` });
+        }
+        
         // Find and update the daily report by ID in site-specific database
         const updatedDailyReport = await siteModels.SiteDailyReport.findByIdAndUpdate(
             id,
-            { date, materialName, quantity, notes, location },
+            { 
+                date, 
+                materialName, 
+                quantity, 
+                notes, 
+                location,
+                materialPrice: materialData.materialPrice,
+                labourPrice: materialData.laborPrice
+            },
             { new: true, runValidators: true }
         );
 

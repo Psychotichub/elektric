@@ -25,12 +25,39 @@ const addTotalPrice = async (req, res) => {
         // Get site-specific models
         const siteModels = await getSiteModels(req.user.site, req.user.company);
         
+        // Process each material to add pricing information
+        const processedMaterials = await Promise.all(materials.map(async (material) => {
+            // Find the material in the site-specific database to get pricing
+            const materialData = await siteModels.SiteMaterial.findOne({ 
+                materialName: material.materialName 
+            });
+            
+            if (!materialData) {
+                throw new Error(`Material '${material.materialName}' not found in site database`);
+            }
+            
+            // Calculate costs and total price
+            const materialCost = material.quantity * materialData.materialPrice;
+            const laborCost = material.quantity * materialData.laborPrice;
+            const totalPrice = materialCost + laborCost;
+            
+            // Add pricing information to the total price record
+            return {
+                ...material,
+                materialPrice: materialData.materialPrice,
+                laborPrice: materialData.laborPrice,
+                materialCost: materialCost,
+                laborCost: laborCost,
+                totalPrice: totalPrice
+            };
+        }));
+        
         // Create new total prices in site-specific database
-        const savedMaterials = await siteModels.SiteTotalPrice.insertMany(materials);
+        const savedMaterials = await siteModels.SiteTotalPrice.insertMany(processedMaterials);
         res.status(201).json(savedMaterials);
     } catch (error) {
         console.error('Error saving total prices:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 };
 
@@ -135,12 +162,39 @@ const calculateTotalPrice = async (req, res) => {
         // Get site-specific models
         const siteModels = await getSiteModels(req.user.site, req.user.company);
         
+        // Process each material to add pricing information
+        const processedMaterials = await Promise.all(materials.map(async (material) => {
+            // Find the material in the site-specific database to get pricing
+            const materialData = await siteModels.SiteMaterial.findOne({ 
+                materialName: material.materialName 
+            });
+            
+            if (!materialData) {
+                throw new Error(`Material '${material.materialName}' not found in site database`);
+            }
+            
+            // Calculate costs and total price
+            const materialCost = material.quantity * materialData.materialPrice;
+            const laborCost = material.quantity * materialData.laborPrice;
+            const totalPrice = materialCost + laborCost;
+            
+            // Add pricing information to the total price record
+            return {
+                ...material,
+                materialPrice: materialData.materialPrice,
+                laborPrice: materialData.laborPrice,
+                materialCost: materialCost,
+                laborCost: laborCost,
+                totalPrice: totalPrice
+            };
+        }));
+        
         // Create new total prices in site-specific database
-        const savedMaterials = await siteModels.SiteTotalPrice.insertMany(materials);
+        const savedMaterials = await siteModels.SiteTotalPrice.insertMany(processedMaterials);
         res.status(201).json(savedMaterials);
     } catch (error) {
         console.error('Error calculating total price:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 };
 

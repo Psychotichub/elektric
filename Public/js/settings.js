@@ -115,36 +115,30 @@ class SettingsManager {
         const statsHTML = `
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-number">${siteStats.totalRecords.dailyReports}</div>
+                    <div class="stat-number">${siteStats.dailyReports || 0}</div>
                     <div class="stat-label">Daily Reports</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${siteStats.totalRecords.materials}</div>
+                    <div class="stat-number">${siteStats.materials || 0}</div>
                     <div class="stat-label">Materials</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${siteStats.totalRecords.receivedItems}</div>
+                    <div class="stat-number">${siteStats.receivedItems || 0}</div>
                     <div class="stat-label">Received Items</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${siteStats.totalRecords.totalPriceRecords}</div>
+                    <div class="stat-number">${siteStats.totalPrices || 0}</div>
                     <div class="stat-label">Total Price Records</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${siteStats.totalRecords.monthlyReports}</div>
+                    <div class="stat-number">${siteStats.monthlyReports || 0}</div>
                     <div class="stat-label">Monthly Reports</div>
                 </div>
             </div>
-            <div class="recent-activity">
-                <h3>Recent Activity (${siteStats.recentActivity.period})</h3>
-                <div class="activity-item">
-                    <span>Daily Reports</span>
-                    <span>${siteStats.recentActivity.dailyReports}</span>
-                </div>
-                <div class="activity-item">
-                    <span>Received Items</span>
-                    <span>${siteStats.recentActivity.receivedItems}</span>
-                </div>
+            <div class="site-info">
+                <h3>Site Database Information</h3>
+                <p>This site has its own dedicated database for complete data isolation and security.</p>
+                <p>All data operations are automatically scoped to this site only.</p>
             </div>
         `;
         
@@ -177,11 +171,38 @@ class SettingsManager {
     }
 
     showLoading() {
-        document.getElementById('loadingModal').style.display = 'block';
+        // Create loading modal if it doesn't exist
+        let loadingModal = document.getElementById('loadingModal');
+        if (!loadingModal) {
+            loadingModal = document.createElement('div');
+            loadingModal.id = 'loadingModal';
+            loadingModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            loadingModal.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <div>Loading...</div>
+                </div>
+            `;
+            document.body.appendChild(loadingModal);
+        }
+        loadingModal.style.display = 'block';
     }
 
     hideLoading() {
-        document.getElementById('loadingModal').style.display = 'none';
+        const loadingModal = document.getElementById('loadingModal');
+        if (loadingModal) {
+            loadingModal.style.display = 'none';
+        }
     }
 
     showError(message) {
