@@ -1,8 +1,15 @@
-// Get all total price entries for the current user
+const TotalPrice = require('../models/totalPrice');
+
+// Get all total prices for the user's site
 const getTotalPrices = async (req, res) => {
     try {
-        const userModels = await req.getUserModels();
-        const totalPrices = await userModels.UserTotalPrice.find();
+        // Filter by user's site and company (ALL users including admins)
+        const filter = {
+            site: req.user.site,
+            company: req.user.company
+        };
+        
+        const totalPrices = await TotalPrice.find(filter);
         res.status(200).json(totalPrices);
     } catch (error) {
         console.error('Error getting total prices:', error);
@@ -10,60 +17,56 @@ const getTotalPrices = async (req, res) => {
     }
 };
 
-// Add new total price entry for the current user
+// Add new total prices for the user's site
 const addTotalPrice = async (req, res) => {
-    const { date, materialName, quantity, materialPrice, laborPrice, totalPrice, unit, location } = req.body;
-
-    if (!date || !materialName || !quantity || !materialPrice || !laborPrice || !totalPrice || !unit || !location) {
-        return res.status(400).json({ message: 'Invalid input' });
-    }
-
     try {
-        const userModels = await req.getUserModels();
-        
-        // Get the current user's username for createdBy field
-        const createdBy = req.user.username || req.user.id;
+        const { materials } = req.body;
 
-        const newTotalPrice = new userModels.UserTotalPrice({
-            date,
-            materialName,
-            quantity,
-            materialPrice,
-            laborPrice,
-            totalPrice,
-            unit,
-            location,
-            createdBy
-        });
+        if (!materials || !Array.isArray(materials) || materials.length === 0) {
+            return res.status(400).json({ message: 'Invalid materials data.' });
+        }
 
-        await newTotalPrice.save();
-        res.status(201).json(newTotalPrice);
+        // Add site and company information to each material
+        const materialsWithSite = materials.map(material => ({
+            ...material,
+            site: req.user.site,
+            company: req.user.company
+        }));
+
+        const savedMaterials = await TotalPrice.insertMany(materialsWithSite);
+        res.status(201).json(savedMaterials);
     } catch (error) {
-        console.error('Error adding total price:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error saving total prices:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
-// Update an existing total price entry for the current user
+// Update an existing total price for the user's site
 const updateTotalPrice = async (req, res) => {
-    const { date, materialName, quantity, materialPrice, laborPrice, totalPrice, unit, location } = req.body;
+    const { date, materialName, quantity, materialPrice, laborPrice, materialCost, laborCost, totalPrice, location, notes } = req.body;
     const { id } = req.params;
 
-    if (!date || !materialName || !quantity || !materialPrice || !laborPrice || !totalPrice || !unit || !location) {
+    if (!date || !materialName || !quantity || !materialPrice || !laborPrice) {
         return res.status(400).json({ message: 'Invalid input' });
     }
 
     try {
-        const userModels = await req.getUserModels();
-        
-        const updatedTotalPrice = await userModels.UserTotalPrice.findByIdAndUpdate(
-            id,
-            { date, materialName, quantity, materialPrice, laborPrice, totalPrice, unit, location },
+        // Build filter to ensure user can only update their own site's data
+        const filter = { 
+            _id: id,
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        // Find and update the total price by ID
+        const updatedTotalPrice = await TotalPrice.findOneAndUpdate(
+            filter,
+            { date, materialName, quantity, materialPrice, laborPrice, materialCost, laborCost, totalPrice, location, notes },
             { new: true, runValidators: true }
         );
 
         if (!updatedTotalPrice) {
-            return res.status(404).json({ message: 'Total price entry not found' });
+            return res.status(404).json({ message: 'Total price not found' });
         }
 
         res.status(200).json(updatedTotalPrice);
@@ -73,17 +76,22 @@ const updateTotalPrice = async (req, res) => {
     }
 };
 
-// Delete an existing total price entry for the current user
+// Delete an existing total price for the user's site
 const deleteTotalPrice = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const userModels = await req.getUserModels();
-        
-        const deletedTotalPrice = await userModels.UserTotalPrice.findByIdAndDelete(id);
+        // Build filter to ensure user can only delete their own site's data
+        const filter = { 
+            _id: id,
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        const deletedTotalPrice = await TotalPrice.findOneAndDelete(filter);
 
         if (!deletedTotalPrice) {
-            return res.status(404).json({ message: 'Total price entry not found' });
+            return res.status(404).json({ message: 'Total price not found' });
         }
 
         res.status(204).end();
@@ -93,15 +101,18 @@ const deleteTotalPrice = async (req, res) => {
     }
 };
 
-// Get total prices by date for the current user
+// Get total prices by date for the user's site
 const getTotalPricesByDate = async (req, res) => {
     const { date } = req.params;
     try {
-        const userModels = await req.getUserModels();
-        
-        const totalPrices = await userModels.UserTotalPrice.find({ 
-            date: new Date(date).toLocaleDateString('en-CA').split('T')[0] 
-        });
+        // Build filter to include user's site
+        const filter = { 
+            date: new Date(date).toLocaleDateString('en-CA').split('T')[0],
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        const totalPrices = await TotalPrice.find(filter);
         res.status(200).json(totalPrices);
     } catch (error) {
         console.error('Error getting total prices by date:', error);
@@ -109,18 +120,21 @@ const getTotalPricesByDate = async (req, res) => {
     }
 };
 
-// Get total prices by date range for the current user
+// Get total prices by date range for the user's site
 const getTotalPricesByDateRange = async (req, res) => {
     const { start, end } = req.query;
     try {
-        const userModels = await req.getUserModels();
-        
-        const totalPrices = await userModels.UserTotalPrice.find({
+        // Build filter to include user's site
+        const filter = {
             date: {
                 $gte: new Date(start).toISOString(),
                 $lte: new Date(end).toISOString()
-            }
-        });
+            },
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        const totalPrices = await TotalPrice.find(filter);
         res.status(200).json(totalPrices);
     } catch (error) {
         console.error('Error getting total prices by date range:', error);
@@ -128,45 +142,29 @@ const getTotalPricesByDateRange = async (req, res) => {
     }
 };
 
-// Calculate total price for a material for the current user
+// Calculate total price for the user's site
 const calculateTotalPrice = async (req, res) => {
-    const { materialName, quantity } = req.body;
-
-    if (!materialName || !quantity) {
-        return res.status(400).json({ message: 'Material name and quantity are required' });
-    }
-
     try {
-        const userModels = await req.getUserModels();
-        
-        // Get material pricing from user's database
-        const material = await userModels.UserMaterial.findOne({ materialName });
-        
-        if (!material) {
-            return res.status(404).json({ message: 'Material not found' });
+        const { materials } = req.body;
+
+        if (!materials || !Array.isArray(materials) || materials.length === 0) {
+            return res.status(400).json({ message: 'Invalid materials data.' });
         }
 
-        const materialCost = material.materialPrice * quantity;
-        const laborCost = material.laborPrice * quantity;
-        const totalCost = materialCost + laborCost;
+        // Add site and company information to each material
+        const materialsWithSite = materials.map(material => ({
+            ...material,
+            site: req.user.site,
+            company: req.user.company
+        }));
 
-        res.status(200).json({
-            materialName,
-            quantity,
-            materialPrice: material.materialPrice,
-            laborPrice: material.laborPrice,
-            materialCost,
-            laborCost,
-            totalCost,
-            unit: material.unit
-        });
+        const savedMaterials = await TotalPrice.insertMany(materialsWithSite);
+        res.status(201).json(savedMaterials);
     } catch (error) {
         console.error('Error calculating total price:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
-
-
 
 module.exports = { 
     getTotalPrices, 

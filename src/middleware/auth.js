@@ -57,6 +57,30 @@ exports.isAdmin = (req, res, next) => {
   }
 };
 
+// Site-based authorization middleware - ALL users (including admins) are restricted to their own site
+exports.requireSiteAccess = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Authentication required.' 
+    });
+  }
+
+  // ALL users (including admins) can only access their own site
+  if (!req.user.site) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Site access not configured for this user.' 
+    });
+  }
+
+  // Add site filter to request for controllers to use
+  req.userSite = req.user.site;
+  req.userCompany = req.user.company;
+  
+  next();
+};
+
 // Create a generic authorization middleware for specific actions
 exports.authorize = (requiredRole) => {
   return (req, res, next) => {

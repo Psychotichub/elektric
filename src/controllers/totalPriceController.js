@@ -1,9 +1,15 @@
 const TotalPrice = require('../models/totalPrice');
 
-// Get all daily reports
+// Get all total price data for the user's site
 const getTotalPrice = async (req, res) => {
     try {
-        const total = await TotalPrice.find();
+        // Filter by user's site and company (ALL users including admins)
+        const filter = {
+            site: req.user.site,
+            company: req.user.company
+        };
+        
+        const total = await TotalPrice.find(filter);
         res.status(200).json(total);
     } catch (error) {
         console.error('Error fetching total price:', error);
@@ -11,7 +17,7 @@ const getTotalPrice = async (req, res) => {
     }
 };
 
-// Add new daily reports
+// Add new total price data
 const addTotalPrice = async (req, res) => {
     try {
         const { materials } = req.body;
@@ -20,7 +26,14 @@ const addTotalPrice = async (req, res) => {
             return res.status(400).json({ message: 'Invalid materials data.' });
         }
 
-        const savedMaterials = await TotalPrice.insertMany(materials);
+        // Add site and company information to each material
+        const materialsWithSite = materials.map(material => ({
+            ...material,
+            site: req.user.site,
+            company: req.user.company
+        }));
+
+        const savedMaterials = await TotalPrice.insertMany(materialsWithSite);
         res.status(201).json(savedMaterials);
     } catch (error) {
         console.error('Error saving total price:', error);
@@ -30,11 +43,18 @@ const addTotalPrice = async (req, res) => {
     }
 };
 
-// Get daily reports by date
+// Get total price data by date for the user's site
 const getTotalPriceByDate = async (req, res) => {
     const { date } = req.params;
     try {
-        const totalPrice = await TotalPrice.find({ date: new Date(date).toLocaleDateString('en-CA').split('T')[0] });
+        // Build filter to include user's site
+        const filter = { 
+            date: new Date(date).toLocaleDateString('en-CA').split('T')[0],
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        const totalPrice = await TotalPrice.find(filter);
         res.status(200).json(totalPrice);
     } catch (error) {
         console.error('Error fetching total price by date:', error);
@@ -45,7 +65,14 @@ const getTotalPriceByDate = async (req, res) => {
 const getDateRange = async (req, res) => {
     const { dateRange } = req.query;
     try {
-        const totalPrice = await TotalPrice.findOne({ dateRange });
+        // Build filter to include user's site
+        const filter = { 
+            dateRange,
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        const totalPrice = await TotalPrice.findOne(filter);
         res.json({ exists: !!totalPrice });
     } catch (error) {
         console.error('Error checking date range:', error);
@@ -56,7 +83,14 @@ const getDateRange = async (req, res) => {
 const getTotalPriceByLocation = async (req, res) => {
     const { location } = req.params;
     try {
-        const totalPrice = await TotalPrice.find({ location });
+        // Build filter to include user's site
+        const filter = { 
+            location,
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        const totalPrice = await TotalPrice.find(filter);
         res.status(200).json(totalPrice);
     } catch (error) {
         console.error('Error fetching total price by location:', error);

@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const dailyReportController = require('../controllers/dailyReportController');
 const { getDailyReports, addDailyReport, updateDailyReport, deleteDailyReport, getDailyReportsByDate, getDailyReportsByDateRange } = dailyReportController;
+const { authenticate, requireSiteAccess } = require('../middleware/auth');
 
+// Apply authentication and site access middleware to all routes
+router.use(authenticate);
+router.use(requireSiteAccess);
 
 router.get('/', getDailyReports);
 router.post('/', addDailyReport);

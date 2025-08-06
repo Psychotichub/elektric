@@ -1,16 +1,22 @@
 const DailyReport = require('../models/dailyreport');
 
-// Get all daily reports
+// Get all daily reports for the user's site
 const getDailyReports = async (req, res) => {
     try {
-        // Fetch all daily reports
-        const dailyReports = await DailyReport.find();
+        // Filter by user's site and company (ALL users including admins)
+        const filter = {
+            site: req.user.site,
+            company: req.user.company
+        };
+        
+        const dailyReports = await DailyReport.find(filter);
         res.status(200).json(dailyReports);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
     }
 }; 
+
 // Add new daily reports
 const addDailyReport = async (req, res) => {
     const { materials } = req.body;
@@ -20,8 +26,15 @@ const addDailyReport = async (req, res) => {
     }
 
     try {
+        // Add site and company information to each material
+        const materialsWithSite = materials.map(material => ({
+            ...material,
+            site: req.user.site,
+            company: req.user.company
+        }));
+
         // Create new daily report documents
-        const newDailyReports = await DailyReport.insertMany(materials);
+        const newDailyReports = await DailyReport.insertMany(materialsWithSite);
         res.status(201).json(newDailyReports);
     } catch (error) {
         console.error(error);
@@ -39,9 +52,16 @@ const updateDailyReport = async (req, res) => {
     }
 
     try {
+        // Build filter to ensure user can only update their own site's data
+        const filter = { 
+            _id: id,
+            site: req.user.site,
+            company: req.user.company
+        };
+
         // Find and update the daily report by ID
-        const updatedDailyReport = await DailyReport.findByIdAndUpdate(
-            id,
+        const updatedDailyReport = await DailyReport.findOneAndUpdate(
+            filter,
             { date, materialName, quantity, notes, location },
             { new: true, runValidators: true }
         );
@@ -62,7 +82,14 @@ const deleteDailyReport = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const deletedDailyReport = await DailyReport.findByIdAndDelete(id);
+        // Build filter to ensure user can only delete their own site's data
+        const filter = { 
+            _id: id,
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        const deletedDailyReport = await DailyReport.findOneAndDelete(filter);
 
         if (!deletedDailyReport) {
             return res.status(404).json({ message: 'Daily report not found' });
@@ -75,12 +102,19 @@ const deleteDailyReport = async (req, res) => {
     }
 };
 
-// Get daily reports by date
+// Get daily reports by date for the user's site
 const getDailyReportsByDate = async (req, res) => {
     const { date } = req.params;
     try {
+        // Build filter to include user's site
+        const filter = { 
+            date: new Date(date).toLocaleDateString('en-CA').split('T')[0],
+            site: req.user.site,
+            company: req.user.company
+        };
+
         // Fetch daily reports by date
-        const dailyReports = await DailyReport.find({ date: new Date(date).toLocaleDateString('en-CA').split('T')[0] });
+        const dailyReports = await DailyReport.find(filter);
         res.status(200).json(dailyReports);
     } catch (error) {
         console.error(error);
@@ -88,17 +122,22 @@ const getDailyReportsByDate = async (req, res) => {
     }
 };
 
-// Get daily reports by date range
+// Get daily reports by date range for the user's site
 const getDailyReportsByDateRange = async (req, res) => {
     const { start, end } = req.query;
     try {
-        // Fetch daily reports by date range
-        const dailyReports = await DailyReport.find({
+        // Build filter to include user's site
+        const filter = {
             date: {
                 $gte: new Date(start).toISOString(),
                 $lte: new Date(end).toISOString()
-            }
-        });
+            },
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        // Fetch daily reports by date range
+        const dailyReports = await DailyReport.find(filter);
         res.status(200).json(dailyReports);
     } catch (error) {
         console.error(error);

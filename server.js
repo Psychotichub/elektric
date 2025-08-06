@@ -21,6 +21,9 @@ const adminSiteRoutes = require('./src/routes/adminSiteRoutes');
 // New site-based database routes
 const siteAdminRoutes = require('./src/routes/siteAdminRoutes');
 
+// Settings routes
+const settingsRoutes = require('./src/routes/settingsRoutes');
+
 const { connectToMongo } = require('./src/db/mongo'); //optional
 const { connectToMongoose } = require('./src/db/mongoose');
 const { default: helmet } = require('helmet');
@@ -56,6 +59,11 @@ app.get('/admin-site-totalprice', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'Public', 'html', 'admin-site-totalprice.html'));
 });
 
+// Serve settings page
+app.get('/settings', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'settings.html'));
+});
+
 // Default route serves login page instead of index.html to force authentication
 app.get('/', (req, res) => {
     res.redirect('/login');
@@ -68,6 +76,10 @@ app.get('/index', (req, res) => {
 
 // Authentication routes
 app.use('/api/auth', authRoutes);
+
+// ===== SETTINGS ROUTES =====
+// These routes provide company and site details for users and admins
+app.use('/api/settings', settingsRoutes);
 
 // ===== USER-SPECIFIC DATABASE ROUTES (NEW) =====
 // These routes ensure ALL user data is saved to their individual database folders

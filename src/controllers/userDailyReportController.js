@@ -1,8 +1,15 @@
-// Get all daily reports for the current user
+const DailyReport = require('../models/dailyreport');
+
+// Get all daily reports for the user's site
 const getDailyReports = async (req, res) => {
     try {
-        const userModels = await req.getUserModels();
-        const dailyReports = await userModels.UserDailyReport.find();
+        // Filter by user's site and company (ALL users including admins)
+        const filter = {
+            site: req.user.site,
+            company: req.user.company
+        };
+        
+        const dailyReports = await DailyReport.find(filter);
         res.status(200).json(dailyReports);
     } catch (error) {
         console.error('Error getting daily reports:', error);
@@ -10,7 +17,7 @@ const getDailyReports = async (req, res) => {
     }
 };
 
-// Add new daily reports for the current user
+// Add new daily reports for the user's site
 const addDailyReport = async (req, res) => {
     const { materials } = req.body;
 
@@ -19,19 +26,15 @@ const addDailyReport = async (req, res) => {
     }
 
     try {
-        const userModels = await req.getUserModels();
-        
-        // Get the current user's username for createdBy field
-        const createdBy = req.user.username || req.user.id;
-
-        // Add createdBy to each material in the array
-        const materialsWithCreatedBy = materials.map(material => ({
+        // Add site and company information to each material
+        const materialsWithSite = materials.map(material => ({
             ...material,
-            createdBy
+            site: req.user.site,
+            company: req.user.company
         }));
 
-        // Create new daily report documents in user's database
-        const newDailyReports = await userModels.UserDailyReport.insertMany(materialsWithCreatedBy);
+        // Create new daily report documents
+        const newDailyReports = await DailyReport.insertMany(materialsWithSite);
         res.status(201).json(newDailyReports);
     } catch (error) {
         console.error('Error adding daily reports:', error);
@@ -39,7 +42,7 @@ const addDailyReport = async (req, res) => {
     }
 };
 
-// Update an existing daily report for the current user
+// Update an existing daily report for the user's site
 const updateDailyReport = async (req, res) => {
     const { date, materialName, quantity, notes, location } = req.body;
     const { id } = req.params;
@@ -49,11 +52,16 @@ const updateDailyReport = async (req, res) => {
     }
 
     try {
-        const userModels = await req.getUserModels();
-        
-        // Find and update the daily report by ID in user's database
-        const updatedDailyReport = await userModels.UserDailyReport.findByIdAndUpdate(
-            id,
+        // Build filter to ensure user can only update their own site's data
+        const filter = { 
+            _id: id,
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        // Find and update the daily report by ID
+        const updatedDailyReport = await DailyReport.findOneAndUpdate(
+            filter,
             { date, materialName, quantity, notes, location },
             { new: true, runValidators: true }
         );
@@ -69,14 +77,19 @@ const updateDailyReport = async (req, res) => {
     }
 };
 
-// Delete an existing daily report for the current user
+// Delete an existing daily report for the user's site
 const deleteDailyReport = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const userModels = await req.getUserModels();
-        
-        const deletedDailyReport = await userModels.UserDailyReport.findByIdAndDelete(id);
+        // Build filter to ensure user can only delete their own site's data
+        const filter = { 
+            _id: id,
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        const deletedDailyReport = await DailyReport.findOneAndDelete(filter);
 
         if (!deletedDailyReport) {
             return res.status(404).json({ message: 'Daily report not found' });
@@ -89,16 +102,19 @@ const deleteDailyReport = async (req, res) => {
     }
 };
 
-// Get daily reports by date for the current user
+// Get daily reports by date for the user's site
 const getDailyReportsByDate = async (req, res) => {
     const { date } = req.params;
     try {
-        const userModels = await req.getUserModels();
-        
-        // Fetch daily reports by date from user's database
-        const dailyReports = await userModels.UserDailyReport.find({ 
-            date: new Date(date).toLocaleDateString('en-CA').split('T')[0] 
-        });
+        // Build filter to include user's site
+        const filter = { 
+            date: new Date(date).toLocaleDateString('en-CA').split('T')[0],
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        // Fetch daily reports by date
+        const dailyReports = await DailyReport.find(filter);
         res.status(200).json(dailyReports);
     } catch (error) {
         console.error('Error getting daily reports by date:', error);
@@ -106,19 +122,22 @@ const getDailyReportsByDate = async (req, res) => {
     }
 };
 
-// Get daily reports by date range for the current user
+// Get daily reports by date range for the user's site
 const getDailyReportsByDateRange = async (req, res) => {
     const { start, end } = req.query;
     try {
-        const userModels = await req.getUserModels();
-        
-        // Fetch daily reports by date range from user's database
-        const dailyReports = await userModels.UserDailyReport.find({
+        // Build filter to include user's site
+        const filter = {
             date: {
                 $gte: new Date(start).toISOString(),
                 $lte: new Date(end).toISOString()
-            }
-        });
+            },
+            site: req.user.site,
+            company: req.user.company
+        };
+
+        // Fetch daily reports by date range
+        const dailyReports = await DailyReport.find(filter);
         res.status(200).json(dailyReports);
     } catch (error) {
         console.error('Error getting daily reports by date range:', error);
@@ -126,13 +145,11 @@ const getDailyReportsByDateRange = async (req, res) => {
     }
 };
 
-
-
 module.exports = { 
     getDailyReports, 
     addDailyReport, 
     updateDailyReport, 
     deleteDailyReport, 
     getDailyReportsByDate, 
-    getDailyReportsByDateRange
+    getDailyReportsByDateRange 
 }; 

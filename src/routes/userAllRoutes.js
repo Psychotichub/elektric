@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const compatibilityMiddleware = require('../middleware/compatibilityMiddleware');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireSiteAccess } = require('../middleware/auth');
 
 // Import user-specific controllers
 const {
@@ -41,8 +41,9 @@ const {
     calculateTotalPrice
 } = require('../controllers/userTotalPriceController');
 
-// Apply authentication and compatibility middleware to all routes
+// Apply authentication, site access, and compatibility middleware to all routes
 router.use(authenticateToken);
+router.use(requireSiteAccess);
 router.use(compatibilityMiddleware);
 
 // ===== MATERIAL ROUTES =====
@@ -77,7 +78,5 @@ router.delete('/total-prices/:id', deleteTotalPrice);
 router.get('/total-prices/date/:date', getTotalPricesByDate);
 router.get('/total-prices/range', getTotalPricesByDateRange);
 router.post('/total-prices/calculate', calculateTotalPrice);
-
-
 
 module.exports = router; 

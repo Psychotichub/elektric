@@ -9,7 +9,11 @@ const saveMonthlyReport = async (req, res) => {
             return res.status(400).json({ message: 'Invalid materials data.' });
         }
 
-        const newDocument = new MonthlyReport({ materials });
+        const newDocument = new MonthlyReport({ 
+            materials,
+            site: req.user.site,
+            company: req.user.company
+        });
         const savedDocument = await newDocument.save();
         res.status(201).json(savedDocument);
     } catch (error) {

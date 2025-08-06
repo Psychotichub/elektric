@@ -11,9 +11,14 @@ const totalPriceSchema = new mongoose.Schema({
     materialPrice: { type: Number, required: true },
     laborPrice: { type: Number, required: true },
     totalPrice: { type: Number, required: true },
-    notes: { type: String, default: '' }
+    notes: { type: String, default: '' },
+    site: { type: String, required: true, trim: true },
+    company: { type: String, required: true, trim: true }
 },
 { collection: 'totalPrice' });
+
+// Create compound index for site + company + date for efficient querying
+totalPriceSchema.index({ site: 1, company: 1, date: 1 });
 
 const totalPrice = mongoose.model('totalPrice', totalPriceSchema);
 
