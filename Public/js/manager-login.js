@@ -1,6 +1,5 @@
 // Manager Login JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Manager Login initialized');
     // Clear any stale auth data to avoid loops when opening manager login directly
     try {
         localStorage.removeItem('token');
@@ -78,12 +77,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 1500);
                 
             } else {
-                console.log('❌ Manager login failed:', data.message);
                 showMessage(data.message || 'Login failed. Please check your credentials.', 'error');
             }
             
         } catch (error) {
-            console.error('❌ Login error:', error);
             showMessage('Network error. Please try again.', 'error');
         } finally {
             const submitBtn = loginForm.querySelector('button[type="submit"]');

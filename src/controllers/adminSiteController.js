@@ -4,17 +4,11 @@ const User = require('../models/user');
 // Get all users from all sites in the database
 const getSiteUsers = async (req, res) => {
     try {
-        console.log('🔍 getSiteUsers called');
-        console.log('👤 Request user:', req.user);
         
         const { site, company } = req.user;
-        console.log('🏢 Admin user site and company:', { site, company });
-        
-        console.log('🔍 Getting ALL sites and users from database...');
         
         // Get all users from the main database
         const users = await User.find({}).select('-password');
-        console.log('👥 Users found in main database:', users.length);
         
         // Group users by site and company
         const siteUsers = [];
@@ -43,9 +37,6 @@ const getSiteUsers = async (req, res) => {
             }
         });
         
-        console.log('📍 All sites found:', Array.from(allSites));
-        console.log('👥 All site users found:', siteUsers);
-        
         res.status(200).json({
             success: true,
             users: siteUsers,
@@ -68,8 +59,6 @@ const getSiteMaterials = async (req, res) => {
     try {
         const { site, company } = req.query;
         
-        console.log('🔍 Getting materials for site:', { site, company });
-        
         if (!site || !company) {
             return res.status(400).json({
                 success: false,
@@ -82,8 +71,6 @@ const getSiteMaterials = async (req, res) => {
         
         // Get all materials for the site
         const materials = await siteModels.SiteMaterial.find().sort({ materialName: 1 });
-        
-        console.log(`📊 Found ${materials.length} materials for ${site}_${company}`);
         
         res.status(200).json({
             success: true,
@@ -108,8 +95,6 @@ const getSiteDailyReports = async (req, res) => {
     try {
         const { site, company, startDate, endDate } = req.query;
         
-        console.log('🔍 Getting daily reports for site:', { site, company, startDate, endDate });
-        
         if (!site || !company) {
             return res.status(400).json({
                 success: false,
@@ -131,8 +116,6 @@ const getSiteDailyReports = async (req, res) => {
         
         // Get daily reports for the site
         const dailyReports = await siteModels.SiteDailyReport.find(query).sort({ date: -1 });
-        
-        console.log(`📊 Found ${dailyReports.length} daily reports for ${site}_${company}`);
         
         res.status(200).json({
             success: true,
@@ -157,9 +140,7 @@ const getSiteDailyReports = async (req, res) => {
 const getSiteReceivedItems = async (req, res) => {
     try {
         const { site, company, startDate, endDate } = req.query;
-        
-        console.log('🔍 Getting received items for site:', { site, company, startDate, endDate });
-        
+
         if (!site || !company) {
             return res.status(400).json({
                 success: false,
@@ -181,8 +162,6 @@ const getSiteReceivedItems = async (req, res) => {
         
         // Get received items for the site
         const receivedItems = await siteModels.SiteReceived.find(query).sort({ date: -1 });
-        
-        console.log(`📊 Found ${receivedItems.length} received items for ${site}_${company}`);
         
         res.status(200).json({
             success: true,
@@ -208,8 +187,6 @@ const getSiteTotalPrices = async (req, res) => {
     try {
         const { site, company, startDate, endDate } = req.query;
         
-        console.log('🔍 Getting total prices for site:', { site, company, startDate, endDate });
-        
         if (!site || !company) {
             return res.status(400).json({
                 success: false,
@@ -231,8 +208,6 @@ const getSiteTotalPrices = async (req, res) => {
         
         // Get total prices for the site
         const totalPrices = await siteModels.SiteTotalPrice.find(query).sort({ date: -1 });
-        
-        console.log(`📊 Found ${totalPrices.length} total prices for ${site}_${company}`);
         
         res.status(200).json({
             success: true,
@@ -258,8 +233,6 @@ const calculateSiteTotalPrices = async (req, res) => {
     try {
         const { site, company, startDate, endDate } = req.query;
         
-        console.log('🔍 Calculating total prices for site:', { site, company, startDate, endDate });
-        
         if (!site || !company || !startDate || !endDate) {
             return res.status(400).json({
                 success: false,
@@ -277,9 +250,6 @@ const calculateSiteTotalPrices = async (req, res) => {
                 $lte: new Date(endDate)
             }
         });
-        
-        console.log(`📊 Found ${dailyReports.length} daily reports for ${site}_${company}`);
-        
         // Group by material and calculate totals
         const materialTotals = {};
         
@@ -310,14 +280,7 @@ const calculateSiteTotalPrices = async (req, res) => {
         const grandTotal = calculatedTotalPrices.reduce((sum, item) => sum + item.totalPrice, 0);
         const totalMaterialCost = calculatedTotalPrices.reduce((sum, item) => sum + item.materialCost, 0);
         const totalLaborCost = calculatedTotalPrices.reduce((sum, item) => sum + item.laborCost, 0);
-        
-        console.log(`💰 Calculated totals for ${site}_${company}:`, {
-            totalMaterials: calculatedTotalPrices.length,
-            grandTotal: grandTotal,
-            totalMaterialCost: totalMaterialCost,
-            totalLaborCost: totalLaborCost
-        });
-        
+
         res.status(200).json({
             success: true,
             calculatedTotalPrices: calculatedTotalPrices,
@@ -368,15 +331,7 @@ const getSiteStatistics = async (req, res) => {
         const receivedItemsCount = await siteModels.SiteReceived.countDocuments();
         const totalPricesCount = await siteModels.SiteTotalPrice.countDocuments();
         const monthlyReportsCount = await siteModels.SiteMonthlyReport.countDocuments();
-        
-        console.log(`📊 Site statistics for ${site}_${company}:`, {
-            dailyReports: dailyReportsCount,
-            materials: materialsCount,
-            receivedItems: receivedItemsCount,
-            totalPrices: totalPricesCount,
-            monthlyReports: monthlyReportsCount
-        });
-        
+
         res.status(200).json({
             success: true,
             statistics: {
