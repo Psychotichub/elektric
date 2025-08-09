@@ -375,17 +375,7 @@ body .container {
 }
 
 /* Preset controls row (replacing inline styles) */
-.preset-row {
-    display: grid;
-    grid-template-columns: 1fr 160px 160px;
-    gap: 10px;
-    align-items: center;
-}
-
-.preset-actions {
-    display: flex;
-    gap: 8px;
-}
+/* Preset controls removed */
 
 .manager-control-group {
     margin-bottom: 20px;

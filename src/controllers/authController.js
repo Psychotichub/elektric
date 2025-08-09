@@ -79,7 +79,8 @@ exports.register = async (req, res) => {
       password,
       site: site || '',
       company: company || '',
-      role: role || 'user' // Default to user role
+      role: role || 'user', // Default to user role
+      createdBy: creator ? { id: creator.id, username: creator.username, role: creator.role } : null
     });
 
     await user.save();

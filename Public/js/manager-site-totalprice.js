@@ -76,10 +76,7 @@ function setupEventListeners() {
     const companySelect = document.getElementById('companySelect');
     const startDate = document.getElementById('startDate');
     const endDate = document.getElementById('endDate');
-    const savePresetBtn = document.getElementById('savePresetBtn');
-    const applyPresetBtn = document.getElementById('applyPresetBtn');
-    const presetSelect = document.getElementById('presetSelect');
-    const presetNameInput = document.getElementById('presetName');
+    // Preset controls removed
     const table = document.getElementById('totalPriceTable');
     const prevPageBtn = document.getElementById('prevPageBtn');
     const nextPageBtn = document.getElementById('nextPageBtn');
@@ -100,22 +97,7 @@ function setupEventListeners() {
         console.log('✅ Company select event listener added');
     }
 
-    // Preset buttons
-    if (savePresetBtn) {
-        savePresetBtn.addEventListener('click', saveCurrentPreset);
-        console.log('✅ Save preset button event listener added');
-    }
-    if (applyPresetBtn) {
-        applyPresetBtn.addEventListener('click', applySelectedPreset);
-        console.log('✅ Apply preset button event listener added');
-    }
-    if (presetSelect && presetNameInput) {
-        presetSelect.addEventListener('change', function() {
-            if (this.value) {
-                presetNameInput.value = this.value;
-            }
-        });
-    }
+    // Preset controls removed
 
     // Table sorting
     if (table) {
@@ -232,11 +214,12 @@ async function loadAvailableSites() {
     try {
         const token = localStorage.getItem('token');
         console.log('🔑 Token available:', !!token);
-        
+
         // Decode token to see current user info
+        let payload = null;
         if (token) {
             try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
+                payload = JSON.parse(atob(token.split('.')[1]));
                 console.log('🔍 Current manager from token:', {
                     username: payload.username,
                     role: payload.role,
@@ -247,57 +230,55 @@ async function loadAvailableSites() {
                 console.log('❌ Error decoding token for debugging:', error);
             }
         }
-        
-        const response = await fetch('/api/admin/site/users', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
 
-        console.log('📡 Site users API response status:', response.status);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.log('❌ API Error Response:', errorText);
-            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-        }
-
-        const data = await response.json();
-        console.log('📊 Raw site users data:', data);
-        
-        // Check if data has success property, if not, assume it's successful
-        if (data.success === false) {
-            throw new Error(data.message || 'Failed to load sites');
-        }
-        
-        // Extract unique sites and companies from user data
-        const sites = new Set();
-        const companies = new Set();
-        if (data.users && data.users.length > 0) {
-            console.log('👥 Processing users:', data.users.length);
-            data.users.forEach((user, index) => {
-                console.log(`👤 User ${index + 1}:`, user);
-                if (user.site) {
-                    sites.add(user.site);
-                    console.log(`📍 Added site: ${user.site}`);
-                }
-                if (user.company) {
-                    companies.add(user.company);
-                    console.log(`🏢 Added company: ${user.company}`);
+        // Admins can query site users; managers use their own site/company from token
+        if (payload?.role === 'admin') {
+            const response = await fetch('/api/admin/site/users', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
             });
-        } else if (data.site) {
-            // If no users but site info is available, use that
-            sites.add(data.site);
-            console.log(`📍 Added site from response: ${data.site}`);
+
+            console.log('📡 Site users API response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.log('❌ API Error Response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('📊 Raw site users data:', data);
+
+            if (data.success === false) {
+                throw new Error(data.message || 'Failed to load sites');
+            }
+
+            const sites = new Set();
+            const companies = new Set();
+            if (data.users && data.users.length > 0) {
+                console.log('👥 Processing users:', data.users.length);
+                data.users.forEach((user, index) => {
+                    console.log(`👤 User ${index + 1}:`, user);
+                    if (user.site) sites.add(user.site);
+                    if (user.company) companies.add(user.company);
+                });
+            } else if (data.site) {
+                sites.add(data.site);
+            }
+
+            availableSites = Array.from(sites);
+            availableCompanies = Array.from(companies);
         } else {
-            console.log('⚠️ No users found in the response');
-            console.log('📊 Response data structure:', Object.keys(data));
+            // Manager mode: restrict to own site/company
+            availableSites = payload?.site ? [payload.site] : [];
+            availableCompanies = payload?.company ? [payload.company] : [];
+            if (availableSites.length === 0 || availableCompanies.length === 0) {
+                console.warn('⚠️ Manager has no site/company assigned in token. Limited functionality.');
+            }
         }
 
-        availableSites = Array.from(sites);
-        availableCompanies = Array.from(companies);
         console.log('🏢 Available sites:', availableSites);
         console.log('🏢 Available companies:', availableCompanies);
         
@@ -312,9 +293,7 @@ async function loadAvailableSites() {
         
         populateSiteSelect();
         populateCompanySelect();
-        // Initialize presets UI after options are populated
-        populatePresetSelect();
-        autoApplyLastPreset();
+        // Preset controls removed
         updateSortHeaderFromState();
         
     } catch (error) {
@@ -798,7 +777,7 @@ function updateSortHeaderFromState() {
     updateSortHeaderStyles(headers);
 }
 
-// Presets utilities
+// Preset utilities (removed)
 function getStoredPresets() {
     try {
         const raw = localStorage.getItem(PRESETS_STORAGE_KEY);

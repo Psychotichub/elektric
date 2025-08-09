@@ -1,4 +1,16 @@
 const { getSiteModels } = require('../models/siteDatabase');
+const User = require('../models/user');
+
+async function getManagerOwnedUsernames(managerId, managerUsername) {
+    try {
+        const users = await User.find({ 'createdBy.id': managerId }).select('username');
+        const usernames = users.map(u => u.username);
+        if (managerUsername) usernames.push(managerUsername);
+        return Array.from(new Set(usernames));
+    } catch (e) {
+        return managerUsername ? [managerUsername] : [];
+    }
+}
 
 // Calculate total prices for a specific site and company
 exports.calculateTotalPrices = async (req, res) => {
@@ -18,13 +30,22 @@ exports.calculateTotalPrices = async (req, res) => {
         // Get site-specific models
         const siteModels = await getSiteModels(site, company);
         
-        // Get daily reports for the date range
-        const dailyReports = await siteModels.SiteDailyReport.find({
+        // Build base date range filter
+        const reportFilter = {
             date: {
                 $gte: new Date(startDate),
                 $lte: new Date(endDate)
             }
-        });
+        };
+
+        // If requester is a manager, restrict to data created by the manager or users they created
+        if (req.user?.role === 'manager') {
+            const allowedUsernames = await getManagerOwnedUsernames(req.user.id, req.user.username);
+            reportFilter.username = { $in: allowedUsernames };
+        }
+
+        // Get daily reports for the date range (and username filter if applied)
+        const dailyReports = await siteModels.SiteDailyReport.find(reportFilter);
 
         console.log(`📊 Found ${dailyReports.length} daily reports for ${site}_${company}`);
 
