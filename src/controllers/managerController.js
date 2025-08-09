@@ -30,9 +30,6 @@ async function getManagerOwnedUsernames(managerId, managerUsername) {
 exports.calculateTotalPrices = async (req, res) => {
     try {
         const { site, company, startDate, endDate } = req.query;
-        
-        console.log('🔍 Manager calculating total prices:', { site, company, startDate, endDate });
-        
         // Validation
         if (!site || !company || !startDate || !endDate) {
             return res.status(400).json({
@@ -90,8 +87,6 @@ exports.calculateTotalPrices = async (req, res) => {
             }
         }
 
-        console.log(`📊 Found ${dailyReports.length} daily reports for ${site}_${company}`);
-
         // Group by material and calculate totals
         const materialTotals = {};
         
@@ -131,13 +126,6 @@ exports.calculateTotalPrices = async (req, res) => {
         const totalMaterialCost = calculatedTotalPrices.reduce((sum, item) => sum + item.materialCost, 0);
         const totalLaborCost = calculatedTotalPrices.reduce((sum, item) => sum + item.laborCost, 0);
 
-        console.log(`💰 Calculated totals for ${site}_${company}:`, {
-            totalMaterials: calculatedTotalPrices.length,
-            grandTotal: grandTotal,
-            totalMaterialCost: totalMaterialCost,
-            totalLaborCost: totalLaborCost
-        });
-
         res.status(200).json({
             success: true,
             calculatedTotalPrices: calculatedTotalPrices,
@@ -170,8 +158,6 @@ exports.getSiteMaterials = async (req, res) => {
     try {
         const { site, company } = req.query;
         
-        console.log('🔍 Manager getting site materials:', { site, company });
-        
         // Validation
         if (!site || !company) {
             return res.status(400).json({
@@ -195,8 +181,6 @@ exports.getSiteMaterials = async (req, res) => {
             .find(materialsFilter)
             .sort({ materialName: 1 });
 
-        console.log(`📊 Found ${materials.length} materials for ${site}_${company}`);
-
         res.status(200).json({
             success: true,
             materials: materials,
@@ -218,8 +202,6 @@ exports.getSiteMaterials = async (req, res) => {
 exports.getSiteStatistics = async (req, res) => {
     try {
         const { site, company } = req.query;
-        
-        console.log('🔍 Manager getting site statistics:', { site, company });
         
         // Validation
         if (!site || !company) {
@@ -252,13 +234,7 @@ exports.getSiteStatistics = async (req, res) => {
         const totalPricesCount = await siteModels.SiteTotalPrice.countDocuments(totalPricesFilter);
         const monthlyReportsCount = await siteModels.SiteMonthlyReport.countDocuments();
 
-        console.log(`📊 Site statistics for ${site}_${company}:`, {
-            dailyReports: dailyReportsCount,
-            materials: materialsCount,
-            receivedItems: receivedItemsCount,
-            totalPrices: totalPricesCount,
-            monthlyReports: monthlyReportsCount
-        });
+
 
         res.status(200).json({
             success: true,

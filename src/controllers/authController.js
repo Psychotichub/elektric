@@ -13,8 +13,6 @@ exports.register = async (req, res) => {
     const { username, password } = req.body;
     let { role, site, company } = req.body;
 
-    console.log('🔍 Registration attempt:', { username, site, company, role });
-
     // Check if user already exists
     const existingUser = await User.findOne({ username });
     if (existingUser) {
@@ -141,13 +139,11 @@ exports.login = async (req, res) => {
 
     // If user found and is a manager, allow login without site/company
     if (user && user.role === 'manager') {
-      console.log('✅ Manager login - bypassing site/company validation');
     } else {
       // For admins/users, require exact site and company (case-insensitive, full match)
       const inputSite = String(site || '').trim();
       const inputCompany = String(company || '').trim();
       if (!inputSite || !inputCompany) {
-        console.log('❌ Site and company required for admin/user');
         return res.status(400).json({ 
           success: false,
           message: 'Site and company are required for admin/user login' 
@@ -163,15 +159,11 @@ exports.login = async (req, res) => {
       const storedCompany = String(user.company || '').trim();
       const siteMatches = storedSite.toLowerCase() === inputSite.toLowerCase();
       const companyMatches = storedCompany.toLowerCase() === inputCompany.toLowerCase();
-      console.log('🔍 Comparing site/company:', { storedSite, storedCompany, inputSite, inputCompany, siteMatches, companyMatches });
       if (!siteMatches || !companyMatches) {
-        console.log('❌ Site or company mismatch for admin/user login');
         return res.status(400).json({ success: false, message: 'Invalid credentials' });
       }
     }
 
-    console.log('🔍 Final user found:', user ? 'Yes' : 'No');
-    
     if (user) {
       console.log('✅ User details:', {
         id: user._id,
@@ -183,7 +175,6 @@ exports.login = async (req, res) => {
     }
     
     if (!user) {
-      console.log('❌ No user found with these credentials');
       return res.status(400).json({ 
         success: false,
         message: 'Invalid credentials' 
@@ -191,19 +182,14 @@ exports.login = async (req, res) => {
     }
 
     // Check password
-    console.log('🔍 Checking password for user:', user.username);
     const isMatch = await user.comparePassword(password);
-    console.log('🔍 Password match result:', isMatch);
     
     if (!isMatch) {
-      console.log('❌ Password does not match');
       return res.status(400).json({ 
         success: false,
         message: 'Invalid credentials' 
       });
     }
-
-    console.log('✅ Password verified successfully');
 
     // Create token with better security
     const token = jwt.sign(
@@ -295,8 +281,6 @@ exports.getUsers = async (req, res) => {
       .select('-password')
       .sort({ createdAt: -1 })
       .limit(100);
-
-    console.log(`✅ Retrieved ${users.length} users for manager`);
 
     res.status(200).json({
       success: true,

@@ -28,8 +28,6 @@ async function getSiteConnection(site, company) {
 
     // Store connection in cache
     siteConnections.set(dbName, connection);
-    
-    console.log(`✅ Connected to site database: ${dbName}`);
     return connection;
   } catch (error) {
     console.error(`❌ Failed to connect to site database ${dbName}:`, error);
@@ -213,7 +211,6 @@ async function closeAllSiteConnections() {
   for (const [dbName, connection] of siteConnections) {
     try {
       await connection.close();
-      console.log(`✅ Closed connection to ${dbName}`);
     } catch (error) {
       console.error(`❌ Error closing connection to ${dbName}:`, error);
     }

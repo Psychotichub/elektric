@@ -37,8 +37,6 @@ const addTotalPrice = async (req, res) => {
         res.status(201).json(savedMaterials);
     } catch (error) {
         console.error('Error saving total price:', error);
-        console.error('Request body:', req.body);
-        console.error('Stack trace:', error.stack);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };

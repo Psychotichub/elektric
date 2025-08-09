@@ -152,12 +152,10 @@ app.use((err, _, res, next) => {
         console.log('✅ Connected to MongoDB');
 
         await connectToMongoose();
-        console.log('✅ Connected to Mongoose');
 
         // Verify database connection is working
         const mongoose = require('mongoose');
         if (mongoose.connection.readyState === 1) {
-            console.log('✅ Database connection verified');
         } else {
             throw new Error('Database connection not ready');
         }
