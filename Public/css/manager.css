@@ -147,6 +147,14 @@ body:has(.login-container) {
     border: 1px solid #f5c6cb;
 }
 
+/* Ensure info messages are clearly visible */
+.message.info {
+    display: block;
+    background: #f1f5f9; /* light neutral */
+    color: #000; /* black text */
+    border: 1px solid #e2e8f0;
+}
+
 /* Label icons spacing */
 .login-header i,
 .form-group label i {
@@ -351,6 +359,12 @@ body .container {
     margin-bottom: 30px;
     text-align: center;
 }
+/* Elevation hover for cards */
+.manager-results:hover,
+.manager-panel-header:hover {
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease;
+}
 
 .manager-panel-header h2 {
     color: #2c3e50;
@@ -372,27 +386,32 @@ body .container {
     border-radius: 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     margin-bottom: 30px;
+    /* Compact inline layout for controls */
+    display: grid;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    gap: 12px 16px;
+    align-items: end;
 }
 
 /* Preset controls row (replacing inline styles) */
 /* Preset controls removed */
 
 .manager-control-group {
-    margin-bottom: 20px;
+    margin-bottom: 0;
 }
 
 .manager-control-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: #2c3e50;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .manager-control-group select,
 .manager-control-group input {
     width: 100%;
-    padding: 12px;
+    padding: 8px 10px;
     border: 2px solid #e1e8ed;
     border-radius: 8px;
     font-size: 1rem;
@@ -411,6 +430,19 @@ body .container {
     border-color: #667eea;
     background: #ffffff;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Responsive adjustments for control row */
+@media (max-width: 992px) {
+    .manager-controls {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .manager-controls {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Manager Action Buttons */
@@ -432,6 +464,12 @@ body .container {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+.manager-btn:focus-visible,
+.manager-header-btn:focus-visible,
+.manager-logout-btn:focus-visible {
+    outline: 3px solid rgba(102, 126, 234, 0.35);
+    outline-offset: 2px;
 }
 
 .manager-btn-primary {
@@ -530,6 +568,18 @@ body .container {
     border-collapse: collapse;
     margin-top: 20px;
 }
+.table-container {
+    max-height: 60vh;
+    overflow: auto;
+    border: 1px solid #eef2f5;
+    border-radius: 12px;
+}
+.manager-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8f9fa;
+}
 
 .manager-table th {
     background: #f8f9fa;
@@ -549,10 +599,13 @@ body .container {
 .manager-table tr:hover {
     background: #f8f9fa;
 }
+.manager-table tbody tr:nth-child(odd) {
+    background: #fafbfc;
+}
 
 .manager-table .no-data {
     text-align: center;
-    color: #7f8c8d;
+    color: #000;
     font-style: italic;
     padding: 40px;
 }
@@ -621,6 +674,10 @@ body .container {
 
 .manager-page-btn:hover {
     background: #f8f9fa;
+}
+.manager-page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .manager-page-info {

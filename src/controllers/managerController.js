@@ -132,8 +132,17 @@ exports.getSiteMaterials = async (req, res) => {
         // Get site-specific models
         const siteModels = await getSiteModels(site, company);
         
-        // Get all materials for the site
-        const materials = await siteModels.SiteMaterial.find().sort({ materialName: 1 });
+        // Apply manager ownership filter if needed
+        let materialsFilter = {};
+        if (req.user?.role === 'manager') {
+            const allowedUsernames = await getManagerOwnedUsernames(req.user.id, req.user.username);
+            materialsFilter = { createdBy: { $in: allowedUsernames } };
+        }
+
+        // Get materials for the site
+        const materials = await siteModels.SiteMaterial
+            .find(materialsFilter)
+            .sort({ materialName: 1 });
 
         console.log(`📊 Found ${materials.length} materials for ${site}_${company}`);
 
@@ -172,11 +181,24 @@ exports.getSiteStatistics = async (req, res) => {
         // Get site-specific models
         const siteModels = await getSiteModels(site, company);
         
+        // Build filters for manager ownership if needed
+        let dailyReportsFilter = {};
+        let materialsFilterCount = {};
+        let receivedFilter = {};
+        let totalPricesFilter = {};
+        if (req.user?.role === 'manager') {
+            const allowedUsernames = await getManagerOwnedUsernames(req.user.id, req.user.username);
+            dailyReportsFilter = { username: { $in: allowedUsernames } };
+            materialsFilterCount = { createdBy: { $in: allowedUsernames } };
+            receivedFilter = { username: { $in: allowedUsernames } };
+            totalPricesFilter = { username: { $in: allowedUsernames } };
+        }
+
         // Get counts for different collections
-        const dailyReportsCount = await siteModels.SiteDailyReport.countDocuments();
-        const materialsCount = await siteModels.SiteMaterial.countDocuments();
-        const receivedItemsCount = await siteModels.SiteReceived.countDocuments();
-        const totalPricesCount = await siteModels.SiteTotalPrice.countDocuments();
+        const dailyReportsCount = await siteModels.SiteDailyReport.countDocuments(dailyReportsFilter);
+        const materialsCount = await siteModels.SiteMaterial.countDocuments(materialsFilterCount);
+        const receivedItemsCount = await siteModels.SiteReceived.countDocuments(receivedFilter);
+        const totalPricesCount = await siteModels.SiteTotalPrice.countDocuments(totalPricesFilter);
         const monthlyReportsCount = await siteModels.SiteMonthlyReport.countDocuments();
 
         console.log(`📊 Site statistics for ${site}_${company}:`, {

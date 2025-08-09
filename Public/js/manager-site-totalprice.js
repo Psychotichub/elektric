@@ -1,23 +1,25 @@
-// Manager Site Total Price Management JavaScript
+
+(function(){
+  const __console = (typeof window !== 'undefined' && window.console) ? window.console : { log: function(){} };
+  const console = Object.assign({}, __console, { log: function(){} });
 
 // Global variables
 let currentUser = null;
 let availableSites = [];
 let availableCompanies = [];
 let totalPriceData = [];
-const PRESETS_STORAGE_KEY = 'managerPresets';
-const LAST_PRESET_STORAGE_KEY = 'managerLastPreset';
 let tableSort = { key: 'materialName', dir: 'asc' };
 let pagination = { page: 1, pageSize: 25 };
 let charts = { costBreakdown: null, totalsOverTime: null };
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Manager Site Total Price Management initialized');
     checkAuthentication();
     loadAvailableSites();
     setDefaultDates();
     setupEventListeners();
+    // Hide results (charts + table) until user calculates
+    setResultsVisible(false);
 });
 
 // Setup event listeners
@@ -28,28 +30,24 @@ function setupEventListeners() {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
-        console.log('✅ Logout button event listener added');
     }
 
     // Fetch button
     const fetchBtn = document.getElementById('fetchBtn');
     if (fetchBtn) {
         fetchBtn.addEventListener('click', fetchTotalPrices);
-        console.log('✅ Fetch button event listener added');
     }
 
     // Export button
     const exportBtn = document.getElementById('exportBtn');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportToExcel);
-        console.log('✅ Export button event listener added');
     }
 
     // Clear button
     const clearBtn = document.getElementById('clearBtn');
     if (clearBtn) {
         clearBtn.addEventListener('click', clearResults);
-        console.log('✅ Clear button event listener added');
     }
 
     // Create User button
@@ -60,7 +58,6 @@ function setupEventListeners() {
             console.log('👤 Create User button clicked');
             window.location.href = '/manager-create-user';
         });
-        console.log('✅ Create User button event listener added');
     }
 
     if (headerCreateUserBtn) {
@@ -68,7 +65,6 @@ function setupEventListeners() {
             console.log('👤 Header Create User clicked');
             window.location.href = '/manager-create-user';
         });
-        console.log('✅ Header Create User button event listener added');
     }
 
     // Site and company selection
@@ -94,10 +90,7 @@ function setupEventListeners() {
         companySelect.addEventListener('change', function() {
             console.log('🏢 Company selected:', this.value);
         });
-        console.log('✅ Company select event listener added');
     }
-
-    // Preset controls removed
 
     // Table sorting
     if (table) {
@@ -158,9 +151,16 @@ function setupEventListeners() {
     console.log('✅ Keyboard shortcuts added');
 }
 
+// Show or hide results sections (charts + table)
+function setResultsVisible(visible) {
+    const sections = document.querySelectorAll('.manager-results');
+    sections.forEach(sec => {
+        sec.style.display = visible ? '' : 'none';
+    });
+}
+
 // Check if user is authenticated and is manager
 function checkAuthentication() {
-    console.log('🔐 Checking manager authentication...');
     const token = localStorage.getItem('token');
     const managerAccess = localStorage.getItem('managerAccess');
     
@@ -180,19 +180,8 @@ function checkAuthentication() {
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         currentUser = payload;
-        console.log('👤 Current manager user:', currentUser);
-        console.log('🔍 Manager details:', {
-            username: currentUser.username,
-            role: currentUser.role,
-            site: currentUser.site,
-            company: currentUser.company
-        });
-        
         // Check if user has manager access (admin or manager role)
         if (currentUser.role !== 'admin' && currentUser.role !== 'manager') {
-            console.log('❌ User is not manager or admin, access denied');
-            console.log('💡 Current user role:', currentUser.role);
-            console.log('💡 Required role: admin or manager');
             showMessage(`Access denied. Manager privileges required. Current role: ${currentUser.role}`, 'error');
             setTimeout(() => {
                 window.location.href = '/manager-login';
@@ -201,31 +190,21 @@ function checkAuthentication() {
         }
 
         document.getElementById('currentUser').textContent = `Welcome, ${currentUser.username} (Manager)`;
-        console.log('✅ Manager authentication successful');
     } catch (error) {
-        console.error('❌ Error decoding token:', error);
         window.location.href = '/manager-login';
     }
 }
 
 // Load available sites from the database
 async function loadAvailableSites() {
-    console.log('🏢 Loading available sites for manager...');
     try {
         const token = localStorage.getItem('token');
-        console.log('🔑 Token available:', !!token);
 
         // Decode token to see current user info
         let payload = null;
         if (token) {
             try {
                 payload = JSON.parse(atob(token.split('.')[1]));
-                console.log('🔍 Current manager from token:', {
-                    username: payload.username,
-                    role: payload.role,
-                    site: payload.site,
-                    company: payload.company
-                });
             } catch (error) {
                 console.log('❌ Error decoding token for debugging:', error);
             }
@@ -240,16 +219,12 @@ async function loadAvailableSites() {
                 }
             });
 
-            console.log('📡 Site users API response status:', response.status);
-
             if (!response.ok) {
                 const errorText = await response.text();
-                console.log('❌ API Error Response:', errorText);
                 throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
-            console.log('📊 Raw site users data:', data);
 
             if (data.success === false) {
                 throw new Error(data.message || 'Failed to load sites');
@@ -258,9 +233,7 @@ async function loadAvailableSites() {
             const sites = new Set();
             const companies = new Set();
             if (data.users && data.users.length > 0) {
-                console.log('👥 Processing users:', data.users.length);
-                data.users.forEach((user, index) => {
-                    console.log(`👤 User ${index + 1}:`, user);
+                data.users.forEach((user) => {
                     if (user.site) sites.add(user.site);
                     if (user.company) companies.add(user.company);
                 });
@@ -283,17 +256,12 @@ async function loadAvailableSites() {
         console.log('🏢 Available companies:', availableCompanies);
         
         if (availableSites.length === 0) {
-            console.log('⚠️ No sites available - this might be normal if no users exist yet');
-            showMessage('No sites available yet. This is normal if no users have been created with site information.', 'info');
-            
-            // Add demo sites for testing purposes
-            availableSites = ['Sion', 'Arsi', 'Dro'];
-            console.log('🔄 Added demo sites for testing');
+            console.log('⚠️ No sites available');
+            showMessage('No sites available yet. Create users with site info or contact admin.', 'info');
         }
         
         populateSiteSelect();
         populateCompanySelect();
-        // Preset controls removed
         updateSortHeaderFromState();
         
     } catch (error) {
@@ -306,10 +274,7 @@ async function loadAvailableSites() {
         
         showMessage(`Failed to load available sites: ${error.message}`, 'error');
         
-        // Add fallback options for testing
-        availableSites = ['Sion', 'Arsi', 'Dro'];
-        availableCompanies = ['Sion', 'Power'];
-        console.log('🔄 Using fallback sites and companies for testing');
+        // Keep selections empty on error (no demo fallbacks)
         populateSiteSelect();
         populateCompanySelect();
     }
@@ -544,11 +509,28 @@ async function fetchTotalPrices() {
                 company: data.company || selectedCompany
             });
             
-            displayCalculatedTotalPrices();
-            updateCalculatedStatistics(data.summary);
-            updateCharts(totalPriceData, data.summary, { start: startDate.value, end: endDate.value });
-            
-            showMessage(`Successfully calculated ${totalPriceData.length} total price records for ${data.site || selectedSite}, ${data.company || selectedCompany}. Grand Total: $${formatNumber(data.summary?.grandTotal || 0)}`, 'success');
+            if (totalPriceData.length === 0) {
+                // No records found: show table section with the built-in no-data row, but hide charts
+                displayCalculatedTotalPrices();
+                // Show the table section only
+                const sections = document.querySelectorAll('.manager-results');
+                sections.forEach(sec => {
+                    const hasTable = sec.querySelector('#totalPriceTable');
+                    sec.style.display = hasTable ? '' : 'none';
+                });
+                const exportBtnEl = document.getElementById('exportBtn');
+                if (exportBtnEl) exportBtnEl.disabled = true;
+                showMessage('No records found for the selected criteria.', 'info');
+            } else {
+                displayCalculatedTotalPrices();
+                updateCalculatedStatistics(data.summary);
+                updateCharts(totalPriceData, data.summary, { start: startDate.value, end: endDate.value });
+                // Reveal results and enable export
+                setResultsVisible(true);
+                const exportBtnEl = document.getElementById('exportBtn');
+                if (exportBtnEl) exportBtnEl.disabled = false;
+                showMessage(`Successfully calculated ${totalPriceData.length} total price records for ${data.site || selectedSite}, ${data.company || selectedCompany}. Grand Total: $${formatNumber(data.summary?.grandTotal || 0)}`, 'success');
+            }
         } else {
             console.log('❌ Manager API returned success: false');
             throw new Error(data.message || 'Failed to calculate total prices');
@@ -573,7 +555,7 @@ function displayCalculatedTotalPrices() {
     
     if (totalPriceData.length === 0) {
         console.log('📭 No data to display');
-        tableBody.innerHTML = '<tr><td colspan="6" class="no-data">No calculated total price data found for the selected criteria.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" class="no-data">No records found for the selected criteria.</td></tr>';
         return;
     }
 
@@ -777,121 +759,7 @@ function updateSortHeaderFromState() {
     updateSortHeaderStyles(headers);
 }
 
-// Preset utilities (removed)
-function getStoredPresets() {
-    try {
-        const raw = localStorage.getItem(PRESETS_STORAGE_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-        console.error('❌ Failed to read presets:', e);
-        return [];
-    }
-}
 
-function setStoredPresets(list) {
-    try {
-        localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(list));
-    } catch (e) {
-        console.error('❌ Failed to write presets:', e);
-    }
-}
-
-function populatePresetSelect() {
-    const select = document.getElementById('presetSelect');
-    if (!select) return;
-    const current = select.value;
-    const presets = getStoredPresets();
-    select.innerHTML = '<option value="">Select a saved preset…</option>';
-    presets
-        .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-        .forEach(p => {
-            if (!p || !p.name) return;
-            const opt = document.createElement('option');
-            opt.value = p.name;
-            opt.textContent = p.name;
-            select.appendChild(opt);
-        });
-    if (current) select.value = current;
-}
-
-function getCurrentSelections() {
-    return {
-        site: document.getElementById('siteSelect')?.value || '',
-        company: document.getElementById('companySelect')?.value || '',
-        startDate: document.getElementById('startDate')?.value || '',
-        endDate: document.getElementById('endDate')?.value || ''
-    };
-}
-
-function saveCurrentPreset() {
-    const nameInput = document.getElementById('presetName');
-    const name = (nameInput?.value || '').trim();
-    const { site, company, startDate, endDate } = getCurrentSelections();
-    if (!name) return showMessage('Please enter a preset name.', 'error');
-    if (!site || !company) return showMessage('Please select site and company first.', 'error');
-    if (!startDate || !endDate) return showMessage('Please select a valid date range.', 'error');
-
-    const presets = getStoredPresets();
-    const preset = { name, site, company, startDate, endDate, updatedAt: new Date().toISOString() };
-    const idx = presets.findIndex(p => p.name === name);
-    if (idx >= 0) {
-        presets[idx] = preset;
-    } else {
-        presets.push(preset);
-    }
-    setStoredPresets(presets);
-    localStorage.setItem(LAST_PRESET_STORAGE_KEY, name);
-    populatePresetSelect();
-    const presetSelect = document.getElementById('presetSelect');
-    if (presetSelect) presetSelect.value = name;
-    showMessage(`Preset "${name}" saved.`, 'success');
-}
-
-function applySelectedPreset() {
-    const select = document.getElementById('presetSelect');
-    if (!select || !select.value) return showMessage('Please select a preset.', 'error');
-    applyPresetByName(select.value);
-}
-
-function applyPresetByName(name) {
-    const presets = getStoredPresets();
-    const preset = presets.find(p => p.name === name);
-    if (!preset) return showMessage('Preset not found.', 'error');
-
-    const siteSelect = document.getElementById('siteSelect');
-    const companySelect = document.getElementById('companySelect');
-    const startDate = document.getElementById('startDate');
-    const endDate = document.getElementById('endDate');
-
-    if (siteSelect && availableSites.includes(preset.site)) {
-        siteSelect.value = preset.site;
-        updateCompanyOptions(preset.site);
-    }
-
-    if (companySelect) {
-        companySelect.value = preset.company;
-    }
-
-    if (startDate) startDate.value = preset.startDate;
-    if (endDate) endDate.value = preset.endDate;
-
-    localStorage.setItem(LAST_PRESET_STORAGE_KEY, name);
-    showMessage(`Preset "${name}" applied.`, 'success');
-}
-
-function autoApplyLastPreset() {
-    try {
-        const last = localStorage.getItem(LAST_PRESET_STORAGE_KEY);
-        if (!last) return;
-        const presetSelect = document.getElementById('presetSelect');
-        if (presetSelect) presetSelect.value = last;
-        applyPresetByName(last);
-    } catch (e) {
-        console.log('No last preset to auto-apply.');
-    }
-}
 
 // Export data to Excel
 function exportToExcel() {
@@ -980,6 +848,10 @@ function clearResults() {
     
     console.log('✅ Calculated results cleared (form selections preserved)');
     showMessage('Calculated results cleared. Form selections preserved.', 'info');
+    // Hide results and disable export until next calculate
+    setResultsVisible(false);
+    const exportBtnEl = document.getElementById('exportBtn');
+    if (exportBtnEl) exportBtnEl.disabled = true;
 }
 
 // Show/hide loading spinner
@@ -1008,12 +880,12 @@ function showMessage(message, type = 'info') {
     if (container) {
         container.insertBefore(messageDiv, container.firstChild);
 
-        // Auto-remove message after 5 seconds
+        // Auto-remove message after 10 seconds
         setTimeout(() => {
             if (messageDiv.parentNode) {
                 messageDiv.remove();
             }
-        }, 5000);
+        }, 10000);
     }
 }
 
@@ -1026,4 +898,6 @@ function logout() {
     localStorage.removeItem('managerSite');
     localStorage.removeItem('managerCompany');
     window.location.href = '/manager-login';
-} 
+}
+
+})();
