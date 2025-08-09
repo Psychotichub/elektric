@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Setup event listeners
 function setupEventListeners() {
-    console.log('🔧 Setting up event listeners...');
     
     // Logout button
     const logoutBtn = document.getElementById('logoutBtn');
@@ -80,16 +79,13 @@ function setupEventListeners() {
     // Add change event listeners for site and company
     if (siteSelect) {
         siteSelect.addEventListener('change', function() {
-            console.log('📍 Site selected:', this.value);
             updateCompanyOptions(this.value);
             if (this.value) localStorage.setItem('managerSite', this.value);
         });
-        console.log('✅ Site select event listener added');
     }
 
     if (companySelect) {
         companySelect.addEventListener('change', function() {
-            console.log('🏢 Company selected:', this.value);
             if (this.value) localStorage.setItem('managerCompany', this.value);
         });
     }
@@ -121,36 +117,33 @@ function setupEventListeners() {
     [startDate, endDate].forEach((input, index) => {
         if (input) {
             input.addEventListener('change', function() {
-                console.log(`📅 Date ${index === 0 ? 'start' : 'end'} changed:`, this.value);
             });
         }
     });
-    console.log('✅ Date input event listeners added');
 
     // Add keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         // Ctrl/Cmd + Enter to fetch data
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
-            console.log('⌨️ Keyboard shortcut: Ctrl+Enter - Fetching data');
+            //console.log('⌨️ Keyboard shortcut: Ctrl+Enter - Fetching data');
             fetchTotalPrices();
         }
         
         // Ctrl/Cmd + E to export
         if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
             e.preventDefault();
-            console.log('⌨️ Keyboard shortcut: Ctrl+E - Exporting data');
+            //console.log('⌨️ Keyboard shortcut: Ctrl+E - Exporting data');
             exportToExcel();
         }
         
         // Ctrl/Cmd + R to clear results
         if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
             e.preventDefault();
-            console.log('⌨️ Keyboard shortcut: Ctrl+R - Clearing results');
+            //console.log('⌨️ Keyboard shortcut: Ctrl+R - Clearing results');
             clearResults();
         }
     });
-    console.log('✅ Keyboard shortcuts added');
 
     // Click on Total Materials card opens materials window
     const totalMaterialsEl = document.getElementById('totalUsers');
@@ -178,19 +171,16 @@ function checkAuthentication() {
     const managerAccess = localStorage.getItem('managerAccess');
     
     if (!token) {
-        console.log('❌ No token found, redirecting to manager login');
         window.location.href = '/manager-login';
         return;
     }
 
     if (!managerAccess) {
-        console.log('❌ No manager access found, redirecting to manager login');
         window.location.href = '/manager-login';
         return;
     }
 
     // Clear any potentially stale site/company cache on page load
-    console.log('🧹 Clearing potentially stale site/company cache');
     localStorage.removeItem('managerSite');
     localStorage.removeItem('managerCompany');
 
@@ -224,7 +214,6 @@ async function loadAvailableSites() {
             try {
                 payload = JSON.parse(atob(token.split('.')[1]));
             } catch (error) {
-                console.log('❌ Error decoding token for debugging:', error);
             }
         }
 
@@ -300,13 +289,7 @@ async function loadAvailableSites() {
             }
         }
 
-        console.log('🏢 Available sites:', availableSites);
-        console.log('🏢 Available companies:', availableCompanies);
-        console.log('🔍 Debug - Sites array:', JSON.stringify(availableSites));
-        console.log('🔍 Debug - Companies array:', JSON.stringify(availableCompanies));
-        
         if (availableSites.length === 0) {
-            console.log('⚠️ No sites available');
             showMessage('No sites available yet. Create users with site info or contact admin.', 'info');
         }
         
@@ -315,13 +298,7 @@ async function loadAvailableSites() {
         updateSortHeaderFromState();
         
     } catch (error) {
-        console.error('❌ Error loading sites:', error);
-        console.error('❌ Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-        });
-        
+        console.error('Error loading sites:', error);
         showMessage(`Failed to load available sites: ${error.message}`, 'error');
         
         // Keep selections empty on error (no demo fallbacks)
@@ -332,16 +309,13 @@ async function loadAvailableSites() {
 
 // Populate site select dropdown
 function populateSiteSelect() {
-    console.log('📋 Populating site select dropdown...');
     const siteSelect = document.getElementById('siteSelect');
     if (!siteSelect) {
-        console.log('❌ Site select element not found');
         return;
     }
     
     // Store current selection if it exists
     const currentSite = siteSelect.value;
-    console.log('💾 Preserving current site selection:', currentSite);
     
     siteSelect.innerHTML = '<option value="">Select a site...</option>';
     
@@ -350,30 +324,23 @@ function populateSiteSelect() {
         option.value = site;
         option.textContent = site;
         siteSelect.appendChild(option);
-        console.log(`📋 Added site option: ${site}`);
     });
     
     // Restore selection if it's still valid
     if (currentSite && availableSites.includes(currentSite)) {
         siteSelect.value = currentSite;
-        console.log('✅ Restored site selection:', currentSite);
     }
-    
-    console.log('✅ Site select dropdown populated');
 }
 
 // Populate company select dropdown
 function populateCompanySelect() {
-    console.log('🏢 Populating company select dropdown...');
     const companySelect = document.getElementById('companySelect');
     if (!companySelect) {
-        console.log('❌ Company select element not found');
         return;
     }
     
     // Store current selection if it exists
     const currentCompany = companySelect.value;
-    console.log('💾 Preserving current company selection:', currentCompany);
     
     companySelect.innerHTML = '<option value="">Select a company...</option>';
     
@@ -382,30 +349,23 @@ function populateCompanySelect() {
         option.value = company;
         option.textContent = company;
         companySelect.appendChild(option);
-        console.log(`🏢 Added company option: ${company}`);
     });
     
     // Restore selection if it's still valid
     if (currentCompany && availableCompanies.includes(currentCompany)) {
         companySelect.value = currentCompany;
-        console.log('✅ Restored company selection:', currentCompany);
     }
-    
-    console.log('✅ Company select dropdown populated');
 }
 
 // Update company options based on selected site
 function updateCompanyOptions(selectedSite) {
-    console.log('🔄 Updating company options for site:', selectedSite);
     const companySelect = document.getElementById('companySelect');
     if (!companySelect) {
-        console.log('❌ Company select element not found');
         return;
     }
     
     // Store current company selection
     const currentCompany = companySelect.value;
-    console.log('💾 Preserving current company selection:', currentCompany);
     
     // Filter companies based on selected site
     const filteredCompanies = availableCompanies.filter(company => {
@@ -420,23 +380,16 @@ function updateCompanyOptions(selectedSite) {
         option.value = company;
         option.textContent = company;
         companySelect.appendChild(option);
-        console.log(`🏢 Added filtered company option: ${company}`);
     });
     
     // Restore company selection if it's still valid
     if (currentCompany && filteredCompanies.includes(currentCompany)) {
         companySelect.value = currentCompany;
-        console.log('✅ Restored company selection:', currentCompany);
-    } else {
-        console.log('⚠️ Previous company selection not available in filtered options');
     }
-    
-    console.log('✅ Company options updated for site:', selectedSite);
 }
 
 // Set default date range (current month)
 function setDefaultDates() {
-    console.log('📅 Setting default dates...');
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -447,19 +400,11 @@ function setDefaultDates() {
     // Only set default dates if they're not already set
     if (startDateInput && !startDateInput.value) {
         startDateInput.value = formatDateForInput(firstDay);
-        console.log('📅 Start date set:', startDateInput.value);
-    } else if (startDateInput) {
-        console.log('📅 Start date already set:', startDateInput.value);
     }
     
     if (endDateInput && !endDateInput.value) {
         endDateInput.value = formatDateForInput(lastDay);
-        console.log('📅 End date set:', endDateInput.value);
-    } else if (endDateInput) {
-        console.log('📅 End date already set:', endDateInput.value);
     }
-    
-    console.log('✅ Default dates set');
 }
 
 // Format date for input field
@@ -469,46 +414,33 @@ function formatDateForInput(date) {
 
 // Fetch total prices for selected site, company and date range
 async function fetchTotalPrices() {
-    console.log('🔍 Fetching total prices for manager...');
     const siteSelect = document.getElementById('siteSelect');
     const companySelect = document.getElementById('companySelect');
     const startDate = document.getElementById('startDate');
     const endDate = document.getElementById('endDate');
     
     if (!siteSelect || !companySelect || !startDate || !endDate) {
-        console.log('❌ Required elements not found');
         showMessage('Required elements not found.', 'error');
         return;
     }
     
-    console.log('📋 Fetch parameters:', {
-        site: siteSelect.value,
-        company: companySelect.value,
-        startDate: startDate.value,
-        endDate: endDate.value
-    });
-    
     // Validation
     if (!siteSelect.value) {
-        console.log('❌ No site selected');
         showMessage('Please select a site.', 'error');
         return;
     }
     
     if (!companySelect.value) {
-        console.log('❌ No company selected');
         showMessage('Please select a company.', 'error');
         return;
     }
     
     if (!startDate.value || !endDate.value) {
-        console.log('❌ Missing date range');
         showMessage('Please select both start and end dates.', 'error');
         return;
     }
     
     if (new Date(startDate.value) > new Date(endDate.value)) {
-        console.log('❌ Invalid date range');
         showMessage('Start date cannot be after end date.', 'error');
         return;
     }
@@ -526,10 +458,6 @@ async function fetchTotalPrices() {
         // Use manager-specific API endpoint
         const apiUrl = `/api/manager/site/calculate-total-prices?site=${selectedSite}&company=${selectedCompany}&startDate=${startDate.value}&endDate=${endDate.value}`;
         
-        console.log('🌐 Making manager API request to:', apiUrl);
-        console.log('📍 Selected site:', selectedSite);
-        console.log('🏢 Selected company:', selectedCompany);
-        
         // Fetch calculated total prices for the specific site and company
         const response = await fetch(apiUrl, {
             headers: {
@@ -540,29 +468,16 @@ async function fetchTotalPrices() {
             }
         });
 
-        console.log('📡 Manager API Response status:', response.status);
-
         if (!response.ok) {
             const errorText = await response.text();
-            console.log('❌ Manager API Error Response:', errorText);
             throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('📊 Raw manager API response data:', data);
         
         if (data.success) {
             totalPriceData = data.calculatedTotalPrices || [];
-            console.log('💰 Calculated total price data fetched:', totalPriceData);
-            console.log('📊 Data summary:', {
-                totalRecords: totalPriceData.length,
-                grandTotal: data.summary?.grandTotal || 0,
-                totalMaterialCost: data.summary?.totalMaterialCost || 0,
-                totalLaborCost: data.summary?.totalLaborCost || 0,
-                dateRange: data.dateRange,
-                site: data.site || selectedSite,
-                company: data.company || selectedCompany
-            });
+
             
             if (totalPriceData.length === 0) {
                 // No records found: show table section with the built-in no-data row, but hide charts
@@ -587,12 +502,10 @@ async function fetchTotalPrices() {
                 showMessage(`Successfully calculated ${totalPriceData.length} total price records for ${data.site || selectedSite}, ${data.company || selectedCompany}. Grand Total: $${formatNumber(data.summary?.grandTotal || 0)}`, 'success');
             }
         } else {
-            console.log('❌ Manager API returned success: false');
             throw new Error(data.message || 'Failed to calculate total prices');
         }
         
     } catch (error) {
-        console.error('❌ Error fetching total prices:', error);
         showMessage('Failed to calculate total prices. Please try again.', 'error');
     } finally {
         showLoading(false);
@@ -601,27 +514,22 @@ async function fetchTotalPrices() {
 
 // Display calculated total prices in the table
 function displayCalculatedTotalPrices() {
-    console.log('📋 Displaying calculated total prices in table...');
     const tableBody = document.getElementById('totalPriceTableBody');
     if (!tableBody) {
-        console.log('❌ Table body element not found');
         return;
     }
     
     if (totalPriceData.length === 0) {
-        console.log('📭 No data to display');
         tableBody.innerHTML = '<tr><td colspan="5" class="no-data">No records found for the selected criteria.</td></tr>';
         return;
     }
 
-    console.log('📊 Creating table rows for', totalPriceData.length, 'calculated records');
     tableBody.innerHTML = '';
     
     // Render with sorting and pagination
     const { sorted, totalPages, page, pageSize } = getSortedAndPagedData();
     
     sorted.forEach((item, index) => {
-        console.log(`📋 Row ${index + 1}:`, item);
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${item.materialName || 'N/A'}</td>
@@ -650,12 +558,10 @@ function displayCalculatedTotalPrices() {
     tableBody.appendChild(totalRow);
     
     updatePaginationControls(totalPages, page);
-    console.log('✅ Table populated with', sorted.length, 'rows (paged) + total row');
 }
 
 // Update statistics panel with calculated data
 function updateCalculatedStatistics(summary) {
-    console.log('📊 Updating calculated statistics...');
     
     const totalUsersElement = document.getElementById('totalUsers');
     const totalPricesElement = document.getElementById('totalPrices');
@@ -667,12 +573,7 @@ function updateCalculatedStatistics(summary) {
     if (totalAmountElement) totalAmountElement.textContent = `$${formatNumber(summary?.grandTotal || 0)}`;
     if (selectedSiteElement) selectedSiteElement.textContent = 'Calculated';
     
-    console.log('✅ Calculated statistics updated:', {
-        totalMaterials: summary?.totalMaterials || 0,
-        grandTotal: summary?.grandTotal || 0,
-        totalMaterialCost: summary?.totalMaterialCost || 0,
-        totalLaborCost: summary?.totalLaborCost || 0
-    });
+
 }
 
 // Open a new window listing all materials (name, unit, prices) for the selected site/company
@@ -940,15 +841,12 @@ function updateSortHeaderFromState() {
 
 // Export data to Excel
 function exportToExcel() {
-    console.log('📤 Exporting calculated data to Excel...');
     if (totalPriceData.length === 0) {
-        console.log('❌ No data to export');
         showMessage('No data to export. Please calculate total prices first.', 'error');
         return;
     }
 
     try {
-        console.log('📊 Preparing Excel data...');
         // Prepare data for Excel
         const excelData = totalPriceData.map(item => ({
             'Material': item.materialName || 'N/A',
@@ -973,8 +871,6 @@ function exportToExcel() {
             'Location': ''
         });
 
-        console.log('📋 Excel data prepared:', excelData);
-
         // Create workbook and worksheet
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.json_to_sheet(excelData);
@@ -989,23 +885,18 @@ function exportToExcel() {
         const endDate = document.getElementById('endDate')?.value || 'unknown';
         const filename = `ManagerTotalPrices_${selectedSite}_${selectedCompany}_${startDate}_to_${endDate}.xlsx`;
 
-        console.log('💾 Saving file as:', filename);
-
         // Save file
         XLSX.writeFile(wb, filename);
         
-        console.log('✅ Excel file exported successfully');
         showMessage('Manager data exported to Excel successfully!', 'success');
         
     } catch (error) {
-        console.error('❌ Error exporting to Excel:', error);
         showMessage('Failed to export data. Please try again.', 'error');
     }
 }
 
 // Clear results
 function clearResults() {
-    console.log('🗑️ Clearing calculated results...');
     totalPriceData = [];
     const tableBody = document.getElementById('totalPriceTableBody');
     if (tableBody) {
@@ -1023,7 +914,6 @@ function clearResults() {
     if (totalAmountElement) totalAmountElement.textContent = '$0';
     if (selectedSiteElement) selectedSiteElement.textContent = '-';
     
-    console.log('✅ Calculated results cleared (form selections preserved)');
     showMessage('Calculated results cleared. Form selections preserved.', 'info');
     // Hide results and disable export until next calculate
     setResultsVisible(false);
@@ -1036,13 +926,11 @@ function showLoading(show) {
     const spinner = document.getElementById('loadingSpinner');
     if (spinner) {
         spinner.style.display = show ? 'flex' : 'none';
-        console.log(show ? '⏳ Showing loading spinner' : '✅ Hiding loading spinner');
     }
 }
 
 // Show message to user
 function showMessage(message, type = 'info') {
-    console.log(`💬 Showing message (${type}):`, message);
     // Remove existing messages
     const existingMessages = document.querySelectorAll('.message');
     existingMessages.forEach(msg => msg.remove());
@@ -1068,7 +956,6 @@ function showMessage(message, type = 'info') {
 
 // Logout function
 function logout() {
-    console.log('👋 Manager logging out...');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('managerAccess');

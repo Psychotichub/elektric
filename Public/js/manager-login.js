@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!password) return showMessage('Please enter your password.', 'error');
         
         try {
-            console.log('🔐 Attempting manager login...');
+            //console.log('🔐 Attempting manager login...');
             showMessage('Logging in...', 'info');
             // Disable form while submitting
             const submitBtn = loginForm.querySelector('button[type="submit"]');
@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (response.ok && data.success) {
-                console.log('✅ Manager login successful');
                 
                 // Store token and user info
                 localStorage.setItem('token', data.token);
