@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
+// Force .env values to override OS environment variables (e.g., Windows USERNAME)
+require('dotenv').config({ override: true });
 
 // Import User model
 const User = require('../models/user');
@@ -74,33 +75,47 @@ async function createManagerAccount(username, password, email = null, company = 
 async function main() {
     try {
         await connectToDatabase();
-        
-        // Single manager account to create (as requested)
-        const managerAccounts = [
-            {
-                username: 'Suresh',
-                password: '787223',
-                email: 'suresh.pokhrel243@gmail.com',
-                company: 'Sion Solution SRL'
-            }
-        ];
-        
-        console.log('🚀 Creating manager accounts...\n');
-        
-        for (const account of managerAccounts) {
-            console.log(`📝 Creating account: ${account.username}`);
-            const result = await createManagerAccount(account.username, account.password, account.email, account.company);
-            
-            if (result.success) {
-                console.log('✅ Success\n');
-            } else {
-                console.log(`❌ Failed: ${result.message}\n`);
-            }
+        // Read credentials from .env
+        const {
+            MANAGER_USERNAME,
+            MANAGER_PASSWORD,
+            MANAGER_EMAIL,
+            MANAGER_COMPANY,
+            USERNAME,
+            PASSWORD,
+            EMAIL,
+            COMPANY
+        } = process.env;
+
+        // Prefer MANAGER_* vars to avoid OS env collisions; fallback to unprefixed
+        const finalUsername = MANAGER_USERNAME || USERNAME;
+        const finalPassword = MANAGER_PASSWORD || PASSWORD;
+        const finalEmail = MANAGER_EMAIL || EMAIL || null;
+        const finalCompany = MANAGER_COMPANY || COMPANY || null;
+
+        if (!finalUsername || !finalPassword) {
+            console.error('❌ Missing USERNAME or PASSWORD in .env');
+            console.error('   Please add USERNAME and PASSWORD (and optionally COMPANY, EMAIL) to your .env file.');
+            return;
         }
-        
+
+        console.log('🚀 Creating manager account from .env ...\n');
+        console.log('📋 From .env (resolved):', {
+            USERNAME: finalUsername,
+            PASSWORD: '***',
+            EMAIL: finalEmail || '(none)',
+            COMPANY: finalCompany || '(none)'
+        });
+
+        const result = await createManagerAccount(finalUsername, finalPassword, finalEmail, finalCompany);
+
+        if (result.success) {
+            console.log('✅ Manager account creation succeeded.');
+        } else {
+            console.log(`❌ Manager account creation failed: ${result.message}`);
+        }
+
         console.log('🎉 Manager account creation completed!');
-        console.log('\n📋 Available manager account:');
-        console.log('   Username: Suresh, Password: 787223');
         
     } catch (error) {
         console.error('❌ Error in main function:', error);
