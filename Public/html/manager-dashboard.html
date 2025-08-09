@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manager Dashboard - Site Total Price Management</title>
+    <title>Manager Dashboard</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/manager.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="/js/vendor/xlsx.full.min.js"></script>
+    <script src="/js/vendor/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="manager-dashboard">
@@ -18,6 +18,9 @@
                 <h1><i class="fas fa-chart-line"></i> Manager Dashboard</h1>
                 <div class="manager-user-info">
                     <span id="currentUser">Loading...</span>
+                    <button id="headerCreateUserBtn" class="manager-header-btn" title="Create a new user or admin">
+                        <i class="fas fa-user-plus"></i> Create User
+                    </button>
                     <button id="logoutBtn" class="manager-logout-btn">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
@@ -65,6 +68,27 @@
                         <i class="fas fa-calendar"></i> End Date:
                     </label>
                     <input type="date" id="endDate" required>
+                </div>
+
+                <!-- Preset Controls -->
+                <div class="manager-control-group">
+                    <label>
+                        <i class="fas fa-bookmark"></i> Presets:
+                    </label>
+                    <div class="preset-row">
+                        <input type="text" id="presetName" placeholder="Preset name (e.g., Sion/Power - This Month)" aria-label="Preset name">
+                        <select id="presetSelect" aria-label="Saved presets" title="Saved presets">
+                            <option value="">Select a saved preset…</option>
+                        </select>
+                        <div class="preset-actions">
+                            <button type="button" id="savePresetBtn" class="manager-btn manager-btn-success" title="Save current selection as a preset">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                            <button type="button" id="applyPresetBtn" class="manager-btn manager-btn-primary" title="Apply selected preset">
+                                <i class="fas fa-play"></i> Apply
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -116,6 +140,21 @@
                 </div>
             </div>
 
+            <!-- Charts Panel -->
+            <div class="manager-results">
+                <h3><i class="fas fa-chart-pie"></i> Summary Charts</h3>
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h4>Cost Breakdown</h4>
+                        <canvas id="costBreakdownChart" width="400" height="280" aria-label="Cost breakdown chart" role="img"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4>Totals Over Period</h4>
+                        <canvas id="totalsOverTimeChart" width="400" height="280" aria-label="Totals over period chart" role="img"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- Results Table -->
             <div class="manager-results">
                 <h3><i class="fas fa-table"></i> Calculated Total Prices</h3>
@@ -139,13 +178,23 @@
                             </tr>
                         </tbody>
                     </table>
+                    <div class="manager-pagination" aria-label="Table pagination">
+                        <button type="button" id="prevPageBtn" class="manager-page-btn" aria-label="Previous page">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="pageInfo" class="manager-page-info">Page 1 of 1</span>
+                        <button type="button" id="nextPageBtn" class="manager-page-btn" aria-label="Next page">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <span class="manager-page-size">Page size: 25</span>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
     <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="manager-loading" style="display: none;">
+    <div id="loadingSpinner" class="manager-loading">
         <div class="manager-spinner"></div>
         <p>Calculating total prices...</p>
     </div>

@@ -23,7 +23,41 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('✅ Authentication verified for:', user.username);
         currentUserSpan.textContent = `${user.username} (${user.role})`;
+
+        // Apply UI constraints based on creator role
+        applyRoleAndSiteConstraints(user);
         return true;
+    }
+
+    function applyRoleAndSiteConstraints(currentUser) {
+        const roleSelect = document.getElementById('role');
+        const siteInput = document.getElementById('site');
+
+        if (roleSelect) {
+            // Restrict role options based on current user role
+            if (currentUser.role === 'manager') {
+                // Manager can only create admin users
+                Array.from(roleSelect.options).forEach(opt => {
+                    if (opt.value !== 'admin') opt.remove();
+                });
+                roleSelect.value = 'admin';
+            } else if (currentUser.role === 'admin') {
+                // Admin cannot create manager accounts
+                Array.from(roleSelect.options).forEach(opt => {
+                    if (opt.value === 'manager') opt.remove();
+                });
+                if (roleSelect.value === 'manager') roleSelect.value = 'user';
+            }
+        }
+
+        if (siteInput && currentUser.role === 'admin' && currentUser.site) {
+            // Admin must create within their own site: lock the site field to their site
+            siteInput.value = currentUser.site;
+            siteInput.setAttribute('readonly', 'true');
+            siteInput.setAttribute('aria-readonly', 'true');
+            siteInput.placeholder = currentUser.site;
+            siteInput.title = `Site is restricted to your site: ${currentUser.site}`;
+        }
     }
     
     // Show message function
@@ -112,6 +146,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!username || !password || !confirmPassword || !role || !site || !company) {
             showMessage('Please fill in all required fields.', 'error');
             return;
+        }
+
+        // Enforce creator rules on client side (additional safety; server also enforces)
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (currentUser.role === 'manager' && role !== 'admin') {
+            showMessage('Managers can only create admin users.', 'error');
+            return;
+        }
+        if (currentUser.role === 'admin') {
+            if (role === 'manager') {
+                showMessage('Admins cannot create manager accounts.', 'error');
+                return;
+            }
+            if (currentUser.site && site.toLowerCase() !== String(currentUser.site).toLowerCase()) {
+                showMessage(`Admins can only create users for their own site (${currentUser.site}).`, 'error');
+                return;
+            }
         }
         
         if (password !== confirmPassword) {

@@ -8,7 +8,8 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 // Register a new user
 exports.register = async (req, res) => {
   try {
-    const { username, password, role, site, company } = req.body;
+    const { username, password } = req.body;
+    let { role, site, company } = req.body;
 
     console.log('🔍 Registration attempt:', { username, site, company, role });
 
@@ -21,32 +22,55 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Check authentication for creating admin/manager accounts
-    if (role === 'admin' || role === 'manager') {
-      // Get token from header
-      const token = req.headers.authorization?.split(' ')[1];
-      if (!token) {
-        return res.status(401).json({ 
+    // Read creator from token when provided
+    const token = req.headers.authorization?.split(' ')[1];
+    let creator = null;
+    if (token) {
+      try {
+        creator = jwt.verify(token, JWT_SECRET);
+      } catch (error) {
+        return res.status(401).json({ success: false, message: 'Invalid token' });
+      }
+    }
+
+    // Enforce rules
+    // 1) Manager can create only admin users
+    if (creator?.role === 'manager') {
+      if (role !== 'admin') {
+        return res.status(403).json({
           success: false,
-          message: 'Authentication required to create admin/manager account' 
+          message: 'Managers can only create admin users'
+        });
+      }
+    }
+
+    // 2) Admin can create only users or admins from their own site
+    if (creator?.role === 'admin') {
+      if (role === 'manager') {
+        return res.status(403).json({
+          success: false,
+          message: 'Admins cannot create manager accounts'
         });
       }
 
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        // Allow managers and admins to create admin/manager accounts
-        if (decoded.role !== 'admin' && decoded.role !== 'manager') {
-          return res.status(403).json({ 
+      if (creator.site) {
+        if (site && String(site).toLowerCase() !== String(creator.site).toLowerCase()) {
+          return res.status(403).json({
             success: false,
-            message: 'Only managers and admins can create admin/manager accounts' 
+            message: `Admins can only create users for their own site (${creator.site})`
           });
         }
-      } catch (error) {
-        return res.status(401).json({ 
-          success: false,
-          message: 'Invalid token' 
-        });
+        // Default/enforce site to admin's site
+        site = creator.site;
       }
+    }
+
+    // 3) Creating admin/manager accounts requires authentication (manager or admin)
+    if ((role === 'admin' || role === 'manager') && (!creator || (creator.role !== 'admin' && creator.role !== 'manager'))) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to create admin/manager account'
+      });
     }
 
     // Create new user

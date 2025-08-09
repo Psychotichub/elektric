@@ -2,13 +2,11 @@
 
 // Function to get the token from localStorage or cookies
 function getToken() {
-    // Try getting from localStorage first
-    const token = localStorage.getItem('token');
-    
-    // Debug the token retrieval
-    //console.log('Token retrieved from localStorage:', token ? 'Token exists' : 'No token found');
-    
-    return token;
+    // Prefer sessionStorage unless remember me was used
+    const sessionToken = sessionStorage.getItem('token');
+    if (sessionToken) return sessionToken;
+    const localToken = localStorage.getItem('token');
+    return localToken;
 }
 
 // Function to decode JWT token without verification
@@ -144,18 +142,24 @@ function authHeader() {
 }
 
 // Function to store token with cross-browser compatibility in mind
-function storeAuthData(token, user) {
+function storeAuthData(token, user, remember = false) {
     try {
         // Try to clear any existing items first
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
         
         // Store new values
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
+        if (remember) {
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+        } else {
+            sessionStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+        }
         
         // Verify storage was successful
-        const storedToken = localStorage.getItem('token');
+        const storedToken = remember ? localStorage.getItem('token') : sessionStorage.getItem('token');
         //console.log('Token storage verification:', storedToken === token ? 'Success' : 'Failed');
         
         return storedToken === token;

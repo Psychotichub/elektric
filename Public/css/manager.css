@@ -127,7 +127,6 @@ body:has(.login-container) {
 
 /* Messages */
 .message {
-    display: none;
     padding: 12px 14px;
     border-radius: 10px;
     font-weight: 600;
@@ -305,6 +304,22 @@ body .container {
     gap: 15px;
 }
 
+.manager-header-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.manager-header-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
 .manager-logout-btn {
     background: rgba(255, 255, 255, 0.2);
     color: white;
@@ -359,6 +374,19 @@ body .container {
     margin-bottom: 30px;
 }
 
+/* Preset controls row (replacing inline styles) */
+.preset-row {
+    display: grid;
+    grid-template-columns: 1fr 160px 160px;
+    gap: 10px;
+    align-items: center;
+}
+
+.preset-actions {
+    display: flex;
+    gap: 8px;
+}
+
 .manager-control-group {
     margin-bottom: 20px;
 }
@@ -380,6 +408,11 @@ body .container {
     font-size: 1rem;
     transition: all 0.3s ease;
     background: #f8f9fa;
+}
+
+/* Preset controls layout improvements */
+.manager-controls .manager-control-group input#presetName::placeholder {
+    color: #9aa5b1;
 }
 
 .manager-control-group select:focus,
@@ -534,6 +567,82 @@ body .container {
     padding: 40px;
 }
 
+/* Charts */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.chart-card {
+    background: #ffffff;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.chart-card h4 {
+    margin: 0 0 10px;
+    color: #2c3e50;
+}
+
+/* Sortable headers */
+.manager-table th {
+    position: relative;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: pointer;
+}
+
+.manager-table th.sort-asc::after,
+.manager-table th.sort-desc::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    margin-top: -5px;
+    border: 5px solid transparent;
+}
+
+.manager-table th.sort-asc::after {
+    border-bottom-color: #667eea;
+}
+
+.manager-table th.sort-desc::after {
+    border-top-color: #667eea;
+}
+
+/* Pagination */
+.manager-pagination {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0 0;
+}
+
+.manager-page-btn {
+    background: #ffffff;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.manager-page-btn:hover {
+    background: #f8f9fa;
+}
+
+.manager-page-info {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.manager-page-size {
+    margin-left: auto;
+    color: #7f8c8d;
+}
+
 /* Manager Loading Spinner */
 .manager-loading {
     position: fixed;
@@ -542,7 +651,7 @@ body .container {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none; /* hidden by default; shown via JS */
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -571,6 +680,32 @@ body .container {
     border-radius: 8px;
     margin-bottom: 20px;
     font-weight: 600;
+}
+
+/* Manager Login: password toggle */
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #667eea;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.toggle-password:focus {
+    outline: none;
+}
+
+.login-form .form-group {
+    position: relative;
+}
+
+.is-loading {
+    opacity: 0.7;
+    cursor: progress;
 }
 
 .manager-message.success {

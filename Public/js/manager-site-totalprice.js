@@ -5,6 +5,11 @@ let currentUser = null;
 let availableSites = [];
 let availableCompanies = [];
 let totalPriceData = [];
+const PRESETS_STORAGE_KEY = 'managerPresets';
+const LAST_PRESET_STORAGE_KEY = 'managerLastPreset';
+let tableSort = { key: 'materialName', dir: 'asc' };
+let pagination = { page: 1, pageSize: 25 };
+let charts = { costBreakdown: null, totalsOverTime: null };
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
@@ -49,6 +54,7 @@ function setupEventListeners() {
 
     // Create User button
     const createUserBtn = document.getElementById('createUserBtn');
+    const headerCreateUserBtn = document.getElementById('headerCreateUserBtn');
     if (createUserBtn) {
         createUserBtn.addEventListener('click', function() {
             console.log('👤 Create User button clicked');
@@ -57,11 +63,26 @@ function setupEventListeners() {
         console.log('✅ Create User button event listener added');
     }
 
+    if (headerCreateUserBtn) {
+        headerCreateUserBtn.addEventListener('click', function() {
+            console.log('👤 Header Create User clicked');
+            window.location.href = '/manager-create-user';
+        });
+        console.log('✅ Header Create User button event listener added');
+    }
+
     // Site and company selection
     const siteSelect = document.getElementById('siteSelect');
     const companySelect = document.getElementById('companySelect');
     const startDate = document.getElementById('startDate');
     const endDate = document.getElementById('endDate');
+    const savePresetBtn = document.getElementById('savePresetBtn');
+    const applyPresetBtn = document.getElementById('applyPresetBtn');
+    const presetSelect = document.getElementById('presetSelect');
+    const presetNameInput = document.getElementById('presetName');
+    const table = document.getElementById('totalPriceTable');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
 
     // Add change event listeners for site and company
     if (siteSelect) {
@@ -78,6 +99,46 @@ function setupEventListeners() {
         });
         console.log('✅ Company select event listener added');
     }
+
+    // Preset buttons
+    if (savePresetBtn) {
+        savePresetBtn.addEventListener('click', saveCurrentPreset);
+        console.log('✅ Save preset button event listener added');
+    }
+    if (applyPresetBtn) {
+        applyPresetBtn.addEventListener('click', applySelectedPreset);
+        console.log('✅ Apply preset button event listener added');
+    }
+    if (presetSelect && presetNameInput) {
+        presetSelect.addEventListener('change', function() {
+            if (this.value) {
+                presetNameInput.value = this.value;
+            }
+        });
+    }
+
+    // Table sorting
+    if (table) {
+        const headers = Array.from(table.querySelectorAll('thead th'));
+        headers.forEach((th, index) => {
+            th.addEventListener('click', () => {
+                const key = getSortKeyByColumnIndex(index);
+                if (!key) return;
+                if (tableSort.key === key) {
+                    tableSort.dir = tableSort.dir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    tableSort.key = key;
+                    tableSort.dir = 'asc';
+                }
+                updateSortHeaderStyles(headers);
+                renderTable();
+            });
+        });
+    }
+
+    // Pagination buttons
+    if (prevPageBtn) prevPageBtn.addEventListener('click', () => changePage(-1));
+    if (nextPageBtn) nextPageBtn.addEventListener('click', () => changePage(1));
 
     // Add date change listeners
     [startDate, endDate].forEach((input, index) => {
@@ -251,6 +312,10 @@ async function loadAvailableSites() {
         
         populateSiteSelect();
         populateCompanySelect();
+        // Initialize presets UI after options are populated
+        populatePresetSelect();
+        autoApplyLastPreset();
+        updateSortHeaderFromState();
         
     } catch (error) {
         console.error('❌ Error loading sites:', error);
@@ -502,6 +567,7 @@ async function fetchTotalPrices() {
             
             displayCalculatedTotalPrices();
             updateCalculatedStatistics(data.summary);
+            updateCharts(totalPriceData, data.summary, { start: startDate.value, end: endDate.value });
             
             showMessage(`Successfully calculated ${totalPriceData.length} total price records for ${data.site || selectedSite}, ${data.company || selectedCompany}. Grand Total: $${formatNumber(data.summary?.grandTotal || 0)}`, 'success');
         } else {
@@ -535,10 +601,10 @@ function displayCalculatedTotalPrices() {
     console.log('📊 Creating table rows for', totalPriceData.length, 'calculated records');
     tableBody.innerHTML = '';
     
-    // Sort data by material name for better organization
-    totalPriceData.sort((a, b) => a.materialName.localeCompare(b.materialName));
+    // Render with sorting and pagination
+    const { sorted, totalPages, page, pageSize } = getSortedAndPagedData();
     
-    totalPriceData.forEach((item, index) => {
+    sorted.forEach((item, index) => {
         console.log(`📋 Row ${index + 1}:`, item);
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -569,7 +635,8 @@ function displayCalculatedTotalPrices() {
     `;
     tableBody.appendChild(totalRow);
     
-    console.log('✅ Table populated with', totalPriceData.length, 'calculated rows + total row');
+    updatePaginationControls(totalPages, page);
+    console.log('✅ Table populated with', sorted.length, 'rows (paged) + total row');
 }
 
 // Update statistics panel with calculated data
@@ -598,6 +665,253 @@ function updateCalculatedStatistics(summary) {
 function formatNumber(number) {
     if (isNaN(number) || number === null || number === undefined) return '0.00';
     return parseFloat(number).toFixed(2);
+}
+
+// Charts
+function updateCharts(dataRows, summary, range) {
+    if (!(window.Chart)) return;
+    const ctxPie = document.getElementById('costBreakdownChart');
+    const ctxLine = document.getElementById('totalsOverTimeChart');
+    if (!ctxPie || !ctxLine) return;
+
+    // Cost breakdown pie (material vs labor vs total)
+    const material = Number(summary?.totalMaterialCost || 0);
+    const labor = Number(summary?.totalLaborCost || 0);
+    const total = Number(summary?.grandTotal || 0);
+    const other = Math.max(0, total - (material + labor));
+
+    const pieData = {
+        labels: ['Material', 'Labor', 'Other'],
+        datasets: [{
+            data: [material, labor, other],
+            backgroundColor: ['#667eea', '#56ab2f', '#f6ad55']
+        }]
+    };
+
+    if (charts.costBreakdown) charts.costBreakdown.destroy();
+    charts.costBreakdown = new Chart(ctxPie, {
+        type: 'pie',
+        data: pieData,
+        options: {
+            plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Cost Breakdown' } }
+        }
+    });
+
+    // Totals over time (group by location as proxy if no date per row)
+    // If rows contain a date field in the future, replace grouping accordingly.
+    const groups = new Map();
+    dataRows.forEach(r => {
+        const key = r.location || 'N/A';
+        const prev = groups.get(key) || 0;
+        groups.set(key, prev + Number(r.totalPrice || 0));
+    });
+    const labels = Array.from(groups.keys());
+    const values = Array.from(groups.values());
+
+    if (charts.totalsOverTime) charts.totalsOverTime.destroy();
+    charts.totalsOverTime = new Chart(ctxLine, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ label: `Totals (${range.start} to ${range.end})`, data: values, backgroundColor: '#764ba2' }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+// Sorting and pagination helpers
+function getSortKeyByColumnIndex(index) {
+    switch (index) {
+        case 0: return 'materialName';
+        case 1: return 'quantity';
+        case 2: return 'materialCost';
+        case 3: return 'laborCost';
+        case 4: return 'totalPrice';
+        case 5: return 'location';
+        default: return null;
+    }
+}
+
+function compareValues(a, b) {
+    if (a == null && b == null) return 0;
+    if (a == null) return -1;
+    if (b == null) return 1;
+    if (typeof a === 'string' && typeof b === 'string') {
+        return a.localeCompare(b);
+    }
+    const numA = Number(a);
+    const numB = Number(b);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return String(a).localeCompare(String(b));
+}
+
+function getSortedAndPagedData() {
+    const sortedAll = [...totalPriceData].sort((x, y) => {
+        const valA = x[tableSort.key];
+        const valB = y[tableSort.key];
+        const cmp = compareValues(valA, valB);
+        return tableSort.dir === 'asc' ? cmp : -cmp;
+    });
+    const totalPages = Math.max(1, Math.ceil(sortedAll.length / pagination.pageSize));
+    pagination.page = Math.min(Math.max(1, pagination.page), totalPages);
+    const start = (pagination.page - 1) * pagination.pageSize;
+    const end = start + pagination.pageSize;
+    return { sorted: sortedAll.slice(start, end), totalPages, page: pagination.page, pageSize: pagination.pageSize };
+}
+
+function updatePaginationControls(totalPages, page) {
+    const pageInfo = document.getElementById('pageInfo');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    if (pageInfo) pageInfo.textContent = `Page ${page} of ${totalPages}`;
+    if (prevPageBtn) prevPageBtn.disabled = page <= 1;
+    if (nextPageBtn) nextPageBtn.disabled = page >= totalPages;
+}
+
+function changePage(delta) {
+    pagination.page += delta;
+    renderTable();
+}
+
+function renderTable() {
+    const tbody = document.getElementById('totalPriceTableBody');
+    if (!tbody) return;
+    // Reuse display function for totals and structure; it will call pagination updates
+    displayCalculatedTotalPrices();
+}
+
+function updateSortHeaderStyles(headers) {
+    headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+    const index = ['materialName', 'quantity', 'materialCost', 'laborCost', 'totalPrice', 'location'].indexOf(tableSort.key);
+    if (index >= 0 && headers[index]) {
+        headers[index].classList.add(tableSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+}
+
+function updateSortHeaderFromState() {
+    const table = document.getElementById('totalPriceTable');
+    if (!table) return;
+    const headers = Array.from(table.querySelectorAll('thead th'));
+    updateSortHeaderStyles(headers);
+}
+
+// Presets utilities
+function getStoredPresets() {
+    try {
+        const raw = localStorage.getItem(PRESETS_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        console.error('❌ Failed to read presets:', e);
+        return [];
+    }
+}
+
+function setStoredPresets(list) {
+    try {
+        localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {
+        console.error('❌ Failed to write presets:', e);
+    }
+}
+
+function populatePresetSelect() {
+    const select = document.getElementById('presetSelect');
+    if (!select) return;
+    const current = select.value;
+    const presets = getStoredPresets();
+    select.innerHTML = '<option value="">Select a saved preset…</option>';
+    presets
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+        .forEach(p => {
+            if (!p || !p.name) return;
+            const opt = document.createElement('option');
+            opt.value = p.name;
+            opt.textContent = p.name;
+            select.appendChild(opt);
+        });
+    if (current) select.value = current;
+}
+
+function getCurrentSelections() {
+    return {
+        site: document.getElementById('siteSelect')?.value || '',
+        company: document.getElementById('companySelect')?.value || '',
+        startDate: document.getElementById('startDate')?.value || '',
+        endDate: document.getElementById('endDate')?.value || ''
+    };
+}
+
+function saveCurrentPreset() {
+    const nameInput = document.getElementById('presetName');
+    const name = (nameInput?.value || '').trim();
+    const { site, company, startDate, endDate } = getCurrentSelections();
+    if (!name) return showMessage('Please enter a preset name.', 'error');
+    if (!site || !company) return showMessage('Please select site and company first.', 'error');
+    if (!startDate || !endDate) return showMessage('Please select a valid date range.', 'error');
+
+    const presets = getStoredPresets();
+    const preset = { name, site, company, startDate, endDate, updatedAt: new Date().toISOString() };
+    const idx = presets.findIndex(p => p.name === name);
+    if (idx >= 0) {
+        presets[idx] = preset;
+    } else {
+        presets.push(preset);
+    }
+    setStoredPresets(presets);
+    localStorage.setItem(LAST_PRESET_STORAGE_KEY, name);
+    populatePresetSelect();
+    const presetSelect = document.getElementById('presetSelect');
+    if (presetSelect) presetSelect.value = name;
+    showMessage(`Preset "${name}" saved.`, 'success');
+}
+
+function applySelectedPreset() {
+    const select = document.getElementById('presetSelect');
+    if (!select || !select.value) return showMessage('Please select a preset.', 'error');
+    applyPresetByName(select.value);
+}
+
+function applyPresetByName(name) {
+    const presets = getStoredPresets();
+    const preset = presets.find(p => p.name === name);
+    if (!preset) return showMessage('Preset not found.', 'error');
+
+    const siteSelect = document.getElementById('siteSelect');
+    const companySelect = document.getElementById('companySelect');
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+
+    if (siteSelect && availableSites.includes(preset.site)) {
+        siteSelect.value = preset.site;
+        updateCompanyOptions(preset.site);
+    }
+
+    if (companySelect) {
+        companySelect.value = preset.company;
+    }
+
+    if (startDate) startDate.value = preset.startDate;
+    if (endDate) endDate.value = preset.endDate;
+
+    localStorage.setItem(LAST_PRESET_STORAGE_KEY, name);
+    showMessage(`Preset "${name}" applied.`, 'success');
+}
+
+function autoApplyLastPreset() {
+    try {
+        const last = localStorage.getItem(LAST_PRESET_STORAGE_KEY);
+        if (!last) return;
+        const presetSelect = document.getElementById('presetSelect');
+        if (presetSelect) presetSelect.value = last;
+        applyPresetByName(last);
+    } catch (e) {
+        console.log('No last preset to auto-apply.');
+    }
 }
 
 // Export data to Excel
@@ -710,10 +1024,10 @@ function showMessage(message, type = 'info') {
     messageDiv.className = `message ${type}`;
     messageDiv.textContent = message;
 
-    // Insert message at the top of the admin panel
-    const adminPanel = document.querySelector('.admin-panel');
-    if (adminPanel) {
-        adminPanel.insertBefore(messageDiv, adminPanel.firstChild);
+    // Insert message at the top of the manager/admin panel
+    const container = document.querySelector('.admin-panel') || document.querySelector('.manager-panel');
+    if (container) {
+        container.insertBefore(messageDiv, container.firstChild);
 
         // Auto-remove message after 5 seconds
         setTimeout(() => {

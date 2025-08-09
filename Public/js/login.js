@@ -74,17 +74,24 @@ document.addEventListener('DOMContentLoaded', () => {
             let storageSuccess = false;
             if (typeof storeAuthData === 'function') {
                 //console.log('Using enhanced storage method');
-                storageSuccess = storeAuthData(data.token, data.user);
+                const remember = document.getElementById('rememberMe')?.checked === true;
+                storageSuccess = storeAuthData(data.token, data.user, remember);
             } else {
                 //console.log('Using standard storage method');
                 try {
                     // Save authentication data using standard method
                     localStorage.removeItem('token');
+                    sessionStorage.removeItem('token');
                     localStorage.removeItem('user');
                     
                     // Store token and user data if provided by the server
                     if (data.token) {
-                        localStorage.setItem('token', data.token);
+                        const remember = document.getElementById('rememberMe')?.checked === true;
+                        if (remember) {
+                            localStorage.setItem('token', data.token);
+                        } else {
+                            sessionStorage.setItem('token', data.token);
+                        }
                     }
                     
                     if (data.user) {

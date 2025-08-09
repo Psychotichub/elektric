@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('register-form');
     const errorMessage = document.getElementById('error-message');
     const successMessage = document.getElementById('success-message');
+    const siteInput = document.getElementById('site');
     
     // Form validation function
     function validateForm() {
@@ -86,6 +87,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false;
             }
         }
+
+        // If admin is creating a user/admin, ensure site equals admin's site
+        try {
+            if (typeof isAdmin === 'function' && isAdmin()) {
+                const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : JSON.parse(localStorage.getItem('user') || '{}');
+                if (currentUser && currentUser.site) {
+                    const inputSite = document.getElementById('site');
+                    if (inputSite && inputSite.value.trim().toLowerCase() !== String(currentUser.site).toLowerCase()) {
+                        showError(`Admins can only create users for their own site (${currentUser.site}).`);
+                        return false;
+                    }
+                }
+            }
+        } catch (e) { /* ignore */ }
         
         return true;
     }
@@ -243,6 +258,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // If user is admin, show admin note
             if (typeof isAdmin === 'function' && isAdmin()) {
                 console.log('User is admin');
+                try {
+                    // Force/register only for admin's site
+                    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : JSON.parse(localStorage.getItem('user') || '{}');
+                    if (currentUser && currentUser.site && siteInput) {
+                        siteInput.value = currentUser.site;
+                        siteInput.setAttribute('readonly', 'true');
+                        siteInput.setAttribute('aria-readonly', 'true');
+                        siteInput.placeholder = currentUser.site;
+                        siteInput.title = `Site is restricted to your site: ${currentUser.site}`;
+                    }
+                } catch (e) { /* ignore */ }
             } else {
                 // If not admin, disable admin role selection
                 const roleSelect = document.getElementById('role');

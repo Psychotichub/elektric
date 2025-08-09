@@ -18,7 +18,7 @@ async function connectToDatabase() {
 }
 
 // Create manager account
-async function createManagerAccount(username, password, email = null, site = null, company = null) {
+async function createManagerAccount(username, password, email = null, company = null) {
     try {
         console.log(`🔧 Creating manager account for: ${username}`);
         
@@ -35,7 +35,6 @@ async function createManagerAccount(username, password, email = null, site = nul
             password: password, // Don't hash here - the model will do it
             email: email,
             role: 'manager',
-            site: site,
             company: company,
             isActive: true,
             createdAt: new Date(),
@@ -49,7 +48,7 @@ async function createManagerAccount(username, password, email = null, site = nul
         console.log('📋 Account details:');
         console.log(`   Username: ${username}`);
         console.log(`   Role: ${managerUser.role}`);
-        console.log(`   Site: ${site || 'Not specified'}`);
+        console.log(`   Site: Not required for manager`);
         console.log(`   Company: ${company || 'Not specified'}`);
         console.log(`   Email: ${email || 'Not specified'}`);
         
@@ -76,28 +75,13 @@ async function main() {
     try {
         await connectToDatabase();
         
-        // Example manager accounts to create
+        // Single manager account to create (as requested)
         const managerAccounts = [
             {
-                username: 'manager1',
-                password: 'manager123',
-                email: 'manager1@example.com',
-                site: 'Sion',
-                company: 'Sion'
-            },
-            {
-                username: 'manager2',
-                password: 'manager456',
-                email: 'manager2@example.com',
-                site: 'Arsi',
-                company: 'Power'
-            },
-            {
-                username: 'admin',
-                password: 'admin123',
-                email: 'admin@example.com',
-                site: 'Sion',
-                company: 'Sion'
+                username: 'Suresh',
+                password: '787223',
+                email: 'suresh.pokhrel243@gmail.com',
+                company: 'Sion Solution SRL'
             }
         ];
         
@@ -105,13 +89,7 @@ async function main() {
         
         for (const account of managerAccounts) {
             console.log(`📝 Creating account: ${account.username}`);
-            const result = await createManagerAccount(
-                account.username,
-                account.password,
-                account.email,
-                account.site,
-                account.company
-            );
+            const result = await createManagerAccount(account.username, account.password, account.email, account.company);
             
             if (result.success) {
                 console.log('✅ Success\n');
@@ -121,10 +99,8 @@ async function main() {
         }
         
         console.log('🎉 Manager account creation completed!');
-        console.log('\n📋 Available manager accounts:');
-        console.log('   Username: manager1, Password: manager123');
-        console.log('   Username: manager2, Password: manager456');
-        console.log('   Username: admin, Password: admin123');
+        console.log('\n📋 Available manager account:');
+        console.log('   Username: Suresh, Password: 787223');
         
     } catch (error) {
         console.error('❌ Error in main function:', error);

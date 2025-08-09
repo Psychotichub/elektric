@@ -17,22 +17,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const loginForm = document.getElementById('managerLoginForm');
     const messageDiv = document.getElementById('message');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
     
+    if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener('click', function() {
+            const isHidden = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isHidden ? 'text' : 'password');
+            this.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+            this.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        });
+    }
+
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
+        const password = passwordInput.value;
         
         // Validation
-        if (!username || !password) {
-            showMessage('Please fill in all fields.', 'error');
-            return;
-        }
+        if (!username) return showMessage('Please enter your username.', 'error');
+        if (!password) return showMessage('Please enter your password.', 'error');
         
         try {
             console.log('🔐 Attempting manager login...');
             showMessage('Logging in...', 'info');
+            // Disable form while submitting
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('is-loading');
             
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -72,6 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('❌ Login error:', error);
             showMessage('Network error. Please try again.', 'error');
+        } finally {
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('is-loading');
         }
     });
     

@@ -1,0 +1,36 @@
+NEXT STEPS CHECKLIST
+note: don't use css inline style
+
+How to use:
+- Tell me the Step ID (e.g., S3) and I will implement it next.
+- If you want changes, say the Step ID + your note.
+
+ Result: Checkbox that stores token in sessionStorage by default; localStorage only if checked; no redirect loops.
+
+S6 — Global auth handling (auto 401 redirect + logout everywhere)
+- Files: Public/js/auth-utils.js, Public/js/security-utils.js
+- Result: Fetch wrapper that redirects to /login on 401; unified logout clears all storage + server session.
+
+S7 — Scheduled report export (weekly email)
+- Files: server.js, src/routes/managerRoutes.js, new scheduler (node-cron), backend mailer
+- Result: Weekly Excel export for chosen site/company/date range emailed to configured recipients.
+
+S8 — Bulk import (Excel template)
+- Files: Public/html/manager-dashboard.html (modal), Public/js/manager-site-totalprice.js, backend upload route
+- Result: Upload .xlsx using a template; validate rows; show per-row errors; preview before import.
+
+S9 — Audit trail (create/update/delete with user + timestamp)
+- Files: src/models/*, src/controllers/*, DB schema changes
+- Result: Each change recorded with actor, action, timestamp; simple view on Manager Dashboard.
+
+S10 — Tests + CI pipeline
+- Files: package.json scripts, tests/*, GitHub Actions
+- Result: Unit + integration + basic E2E for login→dashboard→export; CI runs lint/test on PRs.
+
+Optional quick wins
+- QW1: Keyboard shortcuts help tooltip on dashboard
+- QW2: Dark mode toggle
+- QW3: Role badges and avatar on header
+
+Tell me which Step ID to start with.
+
