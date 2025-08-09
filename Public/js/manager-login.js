@@ -1,9 +1,7 @@
 // Manager Login JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    // Clear any stale auth data to avoid loops when opening manager login directly
+    // Do NOT clear persistent tokens; only clear transient session token
     try {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
         localStorage.removeItem('managerAccess');
         localStorage.removeItem('managerSite');
         localStorage.removeItem('managerCompany');
@@ -11,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
             sessionStorage.removeItem('token');
         }
     } catch (e) {
-        console.error('Failed to clear local storage:', e);
+        console.error('Failed to clear storage:', e);
     }
     
     const loginForm = document.getElementById('managerLoginForm');

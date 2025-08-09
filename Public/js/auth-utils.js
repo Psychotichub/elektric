@@ -2,11 +2,16 @@
 
 // Function to get the token from localStorage or cookies
 function getToken() {
-    // Prefer sessionStorage unless remember me was used
+    // Prefer a persistent token if available so user stays signed in across restarts
+    const localToken = localStorage.getItem('token');
+    if (localToken) return localToken;
     const sessionToken = sessionStorage.getItem('token');
     if (sessionToken) return sessionToken;
-    const localToken = localStorage.getItem('token');
-    return localToken;
+    // Grace window for non-remembered logins across browser restarts
+    const until = Number(localStorage.getItem('sessionTokenUntil') || 0);
+    const sessionBackup = localStorage.getItem('sessionToken');
+    if (sessionBackup && until > Date.now()) return sessionBackup;
+    return null;
 }
 
 // Function to decode JWT token without verification
@@ -150,16 +155,21 @@ function storeAuthData(token, user, remember = false) {
         sessionStorage.removeItem('token');
         
         // Store new values
+        // Always persist user; choose token storage by remember
+        localStorage.setItem('user', JSON.stringify(user));
         if (remember) {
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
         } else {
+            // Still store in localStorage with an expiry marker to avoid immediate logout after restart
+            // Fallback window: 12 hours
             sessionStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
+            const until = Date.now() + (12 * 60 * 60 * 1000);
+            localStorage.setItem('sessionTokenUntil', String(until));
+            localStorage.setItem('sessionToken', token);
         }
         
         // Verify storage was successful
-        const storedToken = remember ? localStorage.getItem('token') : sessionStorage.getItem('token');
+        const storedToken = remember ? localStorage.getItem('token') : (sessionStorage.getItem('token') || localStorage.getItem('sessionToken'));
         //console.log('Token storage verification:', storedToken === token ? 'Success' : 'Failed');
         
         return storedToken === token;
@@ -177,7 +187,15 @@ async function authenticatedFetch(url, options = {}) {
     }
 
     // Add authorization header
-    const token = getToken();
+    let token = getToken();
+    // Grace period: if no token in localStorage but a recent session token exists, use it
+    if (!token) {
+        const until = Number(localStorage.getItem('sessionTokenUntil') || 0);
+        const sessionBackup = localStorage.getItem('sessionToken');
+        if (sessionBackup && until > Date.now()) {
+            token = sessionBackup;
+        }
+    }
     options.headers = {
         ...options.headers,
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),

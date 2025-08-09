@@ -1,17 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Clear any stale auth data to prevent redirect loops when landing on login
+    // Do NOT clear persistent tokens on login page; this breaks "Remember me"
+    // Only clear transient session token to avoid stale session-based auth
     try {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('managerAccess');
-        localStorage.removeItem('managerSite');
-        localStorage.removeItem('managerCompany');
-        // Also clear any session token if present
         if (typeof sessionStorage !== 'undefined') {
             sessionStorage.removeItem('token');
         }
     } catch (e) {
-        console.error('Failed to clear local storage:', e);
+        console.error('Failed to clear session storage:', e);
     }
 
     //console.log('Login page loaded, checking authentication status...');
@@ -91,6 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             localStorage.setItem('token', data.token);
                         } else {
                             sessionStorage.setItem('token', data.token);
+                            const until = Date.now() + (12 * 60 * 60 * 1000);
+                            localStorage.setItem('sessionTokenUntil', String(until));
+                            localStorage.setItem('sessionToken', data.token);
                         }
                     }
                     

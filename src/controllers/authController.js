@@ -3,7 +3,9 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
+const COOKIE_MAX_AGE_DAYS = parseInt(process.env.COOKIE_MAX_AGE_DAYS || '30', 10);
+
 
 // Register a new user
 exports.register = async (req, res) => {
@@ -220,10 +222,11 @@ exports.login = async (req, res) => {
 
     // Set HTTP-only cookie for better security
     if (req.cookies) {
+      const COOKIE_MAX_AGE_DAYS = parseInt(process.env.COOKIE_MAX_AGE_DAYS || '30', 10);
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        maxAge: COOKIE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
         sameSite: 'strict'
       });
     }
