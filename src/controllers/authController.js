@@ -21,23 +21,24 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Only admins can create admin accounts
-    if (role === 'admin') {
+    // Check authentication for creating admin/manager accounts
+    if (role === 'admin' || role === 'manager') {
       // Get token from header
       const token = req.headers.authorization?.split(' ')[1];
       if (!token) {
         return res.status(401).json({ 
           success: false,
-          message: 'Authentication required to create admin account' 
+          message: 'Authentication required to create admin/manager account' 
         });
       }
 
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        if (decoded.role !== 'admin') {
+        // Allow managers and admins to create admin/manager accounts
+        if (decoded.role !== 'admin' && decoded.role !== 'manager') {
           return res.status(403).json({ 
             success: false,
-            message: 'Only admins can create admin accounts' 
+            message: 'Only managers and admins can create admin/manager accounts' 
           });
         }
       } catch (error) {
@@ -59,8 +60,6 @@ exports.register = async (req, res) => {
 
     await user.save();
     console.log('✅ User saved to main database');
-
-
 
     // Return user without password
     const userResponse = user.toObject();
@@ -100,14 +99,42 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Find user by username, site, and company (case-insensitive)
-    console.log('🔍 Searching for user with criteria:', { username, site, company });
-    const user = await User.findOne({ 
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
-      site: { $regex: new RegExp(`^${site}$`, 'i') },
-      company: { $regex: new RegExp(`^${company}$`, 'i') }
+    // First, try to find user by username only (for managers)
+    console.log('🔍 Searching for user by username only:', { username });
+    let user = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
     });
-    console.log('🔍 User found:', user ? 'Yes' : 'No');
+
+    console.log('🔍 Initial user search result:', user ? {
+      username: user.username,
+      role: user.role,
+      site: user.site,
+      company: user.company
+    } : 'No user found');
+
+    // If user found and is a manager, allow login without site/company
+    if (user && (user.role === 'manager' || user.role === 'admin')) {
+      console.log('✅ Manager/Admin login - bypassing site/company validation');
+    } else {
+      // For regular users, require site and company
+      if (!site || !company) {
+        console.log('❌ Site and company required for regular users');
+        return res.status(400).json({ 
+          success: false,
+          message: 'Site and company are required for regular users' 
+        });
+      }
+
+      // Find user by username, site, and company (case-insensitive)
+      console.log('🔍 Searching for regular user with criteria:', { username, site, company });
+      user = await User.findOne({ 
+        username: { $regex: new RegExp(`^${username}$`, 'i') },
+        site: { $regex: new RegExp(`^${site}$`, 'i') },
+        company: { $regex: new RegExp(`^${company}$`, 'i') }
+      });
+    }
+
+    console.log('🔍 Final user found:', user ? 'Yes' : 'No');
     
     if (user) {
       console.log('✅ User details:', {
@@ -128,13 +155,19 @@ exports.login = async (req, res) => {
     }
 
     // Check password
+    console.log('🔍 Checking password for user:', user.username);
     const isMatch = await user.comparePassword(password);
+    console.log('🔍 Password match result:', isMatch);
+    
     if (!isMatch) {
+      console.log('❌ Password does not match');
       return res.status(400).json({ 
         success: false,
         message: 'Invalid credentials' 
       });
     }
+
+    console.log('✅ Password verified successfully');
 
     // Create token with better security
     const token = jwt.sign(
@@ -168,14 +201,57 @@ exports.login = async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
+        role: user.role,
         site: user.site,
-        company: user.company,
-        role: user.role
+        company: user.company
       }
     });
 
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+};
+
+// Get users (for managers)
+exports.getUsers = async (req, res) => {
+  try {
+    // Check authentication
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Authentication required' 
+      });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== 'manager' && decoded.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Access denied. Manager privileges required.' 
+      });
+    }
+
+    // Get recent users (last 50)
+    const users = await User.find({})
+      .select('-password') // Exclude password
+      .sort({ createdAt: -1 }) // Most recent first
+      .limit(50);
+
+    console.log(`✅ Retrieved ${users.length} users for manager`);
+
+    res.status(200).json({
+      success: true,
+      users: users
+    });
+
+  } catch (error) {
+    console.error('Get users error:', error);
     res.status(500).json({ 
       success: false,
       message: 'Server error', 

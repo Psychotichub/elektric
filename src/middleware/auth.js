@@ -57,6 +57,26 @@ exports.isAdmin = (req, res, next) => {
   }
 };
 
+// Manager access middleware - check if user has manager or admin role
+exports.requireManagerAccess = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Authentication required.' 
+    });
+  }
+
+  // Check if user has manager or admin role
+  if (req.user.role !== 'manager' && req.user.role !== 'admin') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Access denied. Manager privileges required.' 
+    });
+  }
+
+  next();
+};
+
 // Site-based authorization middleware - ALL users (including admins) are restricted to their own site
 exports.requireSiteAccess = (req, res, next) => {
   if (!req.user) {

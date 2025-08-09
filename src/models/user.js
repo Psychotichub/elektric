@@ -13,17 +13,23 @@ const userSchema = new mongoose.Schema({
   },
   site: {
     type: String,
-    required: true,
+    required: function() {
+      // Only required for regular users, not for managers/admins
+      return this.role === 'user';
+    },
     trim: true
   },
   company: {
     type: String,
-    required: true,
+    required: function() {
+      // Only required for regular users, not for managers/admins
+      return this.role === 'user';
+    },
     trim: true
   },
   role: {
     type: String,
-    enum: ['admin', 'user'],
+    enum: ['admin', 'manager', 'user'],
     default: 'user'
   },
   createdAt: {
@@ -33,7 +39,17 @@ const userSchema = new mongoose.Schema({
 });
 
 // Create a compound index for username + site + company to ensure uniqueness
-userSchema.index({ username: 1, site: 1, company: 1 }, { unique: true });
+// Only for regular users (managers/admins can have same username without site/company)
+userSchema.index({ username: 1, site: 1, company: 1 }, { 
+  unique: true,
+  partialFilterExpression: { role: 'user' }
+});
+
+// Create a unique index for username for managers/admins
+userSchema.index({ username: 1 }, { 
+  unique: true,
+  partialFilterExpression: { role: { $in: ['manager', 'admin'] } }
+});
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {

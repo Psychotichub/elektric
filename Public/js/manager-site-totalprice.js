@@ -1,4 +1,4 @@
-// Admin Site Total Price Management JavaScript
+// Manager Site Total Price Management JavaScript
 
 // Global variables
 let currentUser = null;
@@ -8,7 +8,7 @@ let totalPriceData = [];
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Admin Site Total Price Management initialized');
+    console.log('🚀 Manager Site Total Price Management initialized');
     checkAuthentication();
     loadAvailableSites();
     setDefaultDates();
@@ -47,13 +47,23 @@ function setupEventListeners() {
         console.log('✅ Clear button event listener added');
     }
 
-    // Site and company selection (no auto-fetch)
+    // Create User button
+    const createUserBtn = document.getElementById('createUserBtn');
+    if (createUserBtn) {
+        createUserBtn.addEventListener('click', function() {
+            console.log('👤 Create User button clicked');
+            window.location.href = '/manager-create-user';
+        });
+        console.log('✅ Create User button event listener added');
+    }
+
+    // Site and company selection
     const siteSelect = document.getElementById('siteSelect');
     const companySelect = document.getElementById('companySelect');
     const startDate = document.getElementById('startDate');
     const endDate = document.getElementById('endDate');
 
-    // Add change event listeners for site and company (no auto-fetch)
+    // Add change event listeners for site and company
     if (siteSelect) {
         siteSelect.addEventListener('change', function() {
             console.log('📍 Site selected:', this.value);
@@ -69,7 +79,7 @@ function setupEventListeners() {
         console.log('✅ Company select event listener added');
     }
 
-    // Add date change listeners (no auto-fetch)
+    // Add date change listeners
     [startDate, endDate].forEach((input, index) => {
         if (input) {
             input.addEventListener('change', function() {
@@ -105,13 +115,21 @@ function setupEventListeners() {
     console.log('✅ Keyboard shortcuts added');
 }
 
-// Check if user is authenticated and is admin
+// Check if user is authenticated and is manager
 function checkAuthentication() {
-    console.log('🔐 Checking authentication...');
+    console.log('🔐 Checking manager authentication...');
     const token = localStorage.getItem('token');
+    const managerAccess = localStorage.getItem('managerAccess');
+    
     if (!token) {
-        console.log('❌ No token found, redirecting to login');
-        window.location.href = '/login';
+        console.log('❌ No token found, redirecting to manager login');
+        window.location.href = '/manager-login';
+        return;
+    }
+
+    if (!managerAccess) {
+        console.log('❌ No manager access found, redirecting to manager login');
+        window.location.href = '/manager-login';
         return;
     }
 
@@ -119,37 +137,37 @@ function checkAuthentication() {
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         currentUser = payload;
-        console.log('👤 Current user:', currentUser);
-        console.log('🔍 User details:', {
+        console.log('👤 Current manager user:', currentUser);
+        console.log('🔍 Manager details:', {
             username: currentUser.username,
             role: currentUser.role,
             site: currentUser.site,
             company: currentUser.company
         });
         
-        // Check if user is admin
-        if (currentUser.role !== 'admin') {
-            console.log('❌ User is not admin, access denied');
+        // Check if user has manager access (admin or manager role)
+        if (currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+            console.log('❌ User is not manager or admin, access denied');
             console.log('💡 Current user role:', currentUser.role);
-            console.log('💡 Required role: admin');
-            showMessage(`Access denied. Admin privileges required. Current role: ${currentUser.role}`, 'error');
+            console.log('💡 Required role: admin or manager');
+            showMessage(`Access denied. Manager privileges required. Current role: ${currentUser.role}`, 'error');
             setTimeout(() => {
-                window.location.href = '/index';
+                window.location.href = '/manager-login';
             }, 2000);
             return;
         }
 
-        document.getElementById('currentUser').textContent = `Welcome, ${currentUser.username} (${currentUser.role})`;
-        console.log('✅ Authentication successful - Admin user');
+        document.getElementById('currentUser').textContent = `Welcome, ${currentUser.username} (Manager)`;
+        console.log('✅ Manager authentication successful');
     } catch (error) {
         console.error('❌ Error decoding token:', error);
-        window.location.href = '/login';
+        window.location.href = '/manager-login';
     }
 }
 
 // Load available sites from the database
 async function loadAvailableSites() {
-    console.log('🏢 Loading available sites...');
+    console.log('🏢 Loading available sites for manager...');
     try {
         const token = localStorage.getItem('token');
         console.log('🔑 Token available:', !!token);
@@ -158,7 +176,7 @@ async function loadAvailableSites() {
         if (token) {
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                console.log('🔍 Current user from token:', {
+                console.log('🔍 Current manager from token:', {
                     username: payload.username,
                     role: payload.role,
                     site: payload.site,
@@ -177,7 +195,6 @@ async function loadAvailableSites() {
         });
 
         console.log('📡 Site users API response status:', response.status);
-        console.log('📡 Site users API response headers:', response.headers);
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -225,11 +242,11 @@ async function loadAvailableSites() {
         
         if (availableSites.length === 0) {
             console.log('⚠️ No sites available - this might be normal if no users exist yet');
-            showMessage('No sites available yet. This is normal if no users have been created with site information. You can still test the functionality by creating some user accounts first.', 'info');
+            showMessage('No sites available yet. This is normal if no users have been created with site information.', 'info');
             
-            // Add a demo site for testing purposes
-            availableSites = ['Demo Site'];
-            console.log('🔄 Added demo site for testing');
+            // Add demo sites for testing purposes
+            availableSites = ['Sion', 'Arsi', 'Dro'];
+            console.log('🔄 Added demo sites for testing');
         }
         
         populateSiteSelect();
@@ -246,8 +263,8 @@ async function loadAvailableSites() {
         showMessage(`Failed to load available sites: ${error.message}`, 'error');
         
         // Add fallback options for testing
-        availableSites = ['Demo Site', 'Test Site'];
-        availableCompanies = ['Demo Company', 'Test Company'];
+        availableSites = ['Sion', 'Arsi', 'Dro'];
+        availableCompanies = ['Sion', 'Power'];
         console.log('🔄 Using fallback sites and companies for testing');
         populateSiteSelect();
         populateCompanySelect();
@@ -393,7 +410,7 @@ function formatDateForInput(date) {
 
 // Fetch total prices for selected site, company and date range
 async function fetchTotalPrices() {
-    console.log('🔍 Fetching total prices...');
+    console.log('🔍 Fetching total prices for manager...');
     const siteSelect = document.getElementById('siteSelect');
     const companySelect = document.getElementById('companySelect');
     const startDate = document.getElementById('startDate');
@@ -443,9 +460,11 @@ async function fetchTotalPrices() {
         const token = localStorage.getItem('token');
         const selectedSite = siteSelect.value;
         const selectedCompany = companySelect.value;
-        const apiUrl = `/api/admin/site/calculate-total-prices?startDate=${startDate.value}&endDate=${endDate.value}`;
         
-        console.log('🌐 Making API request to:', apiUrl);
+        // Use manager-specific API endpoint
+        const apiUrl = `/api/manager/site/calculate-total-prices?site=${selectedSite}&company=${selectedCompany}&startDate=${startDate.value}&endDate=${endDate.value}`;
+        
+        console.log('🌐 Making manager API request to:', apiUrl);
         console.log('📍 Selected site:', selectedSite);
         console.log('🏢 Selected company:', selectedCompany);
         
@@ -457,17 +476,16 @@ async function fetchTotalPrices() {
             }
         });
 
-        console.log('📡 API Response status:', response.status);
-        console.log('📡 API Response headers:', response.headers);
+        console.log('📡 Manager API Response status:', response.status);
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.log('❌ API Error Response:', errorText);
+            console.log('❌ Manager API Error Response:', errorText);
             throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('📊 Raw API response data:', data);
+        console.log('📊 Raw manager API response data:', data);
         
         if (data.success) {
             totalPriceData = data.calculatedTotalPrices || [];
@@ -478,7 +496,8 @@ async function fetchTotalPrices() {
                 totalMaterialCost: data.summary?.totalMaterialCost || 0,
                 totalLaborCost: data.summary?.totalLaborCost || 0,
                 dateRange: data.dateRange,
-                site: data.site || selectedSite
+                site: data.site || selectedSite,
+                company: data.company || selectedCompany
             });
             
             displayCalculatedTotalPrices();
@@ -486,7 +505,7 @@ async function fetchTotalPrices() {
             
             showMessage(`Successfully calculated ${totalPriceData.length} total price records for ${data.site || selectedSite}, ${data.company || selectedCompany}. Grand Total: $${formatNumber(data.summary?.grandTotal || 0)}`, 'success');
         } else {
-            console.log('❌ API returned success: false');
+            console.log('❌ Manager API returned success: false');
             throw new Error(data.message || 'Failed to calculate total prices');
         }
         
@@ -496,43 +515,6 @@ async function fetchTotalPrices() {
     } finally {
         showLoading(false);
     }
-}
-
-// Display total prices in the table
-function displayTotalPrices() {
-    console.log('📋 Displaying total prices in table...');
-    const tableBody = document.getElementById('totalPriceTableBody');
-    if (!tableBody) {
-        console.log('❌ Table body element not found');
-        return;
-    }
-    
-    if (totalPriceData.length === 0) {
-        console.log('📭 No data to display');
-        tableBody.innerHTML = '<tr><td colspan="9" class="no-data">No total price data found for the selected criteria.</td></tr>';
-        return;
-    }
-
-    console.log('📊 Creating table rows for', totalPriceData.length, 'records');
-    tableBody.innerHTML = '';
-    
-    totalPriceData.forEach((item, index) => {
-        console.log(`📋 Row ${index + 1}:`, item);
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${item.user || item.username || 'N/A'}</td>
-            <td>${formatDate(item.date)}</td>
-            <td>${item.material || item.materialName || 'N/A'}</td>
-            <td>${item.quantity || 'N/A'}</td>
-            <td>$${formatNumber(item.materialPrice)}</td>
-            <td>$${formatNumber(item.laborPrice)}</td>
-            <td>$${formatNumber(item.totalPrice || (parseFloat(item.materialPrice || 0) + parseFloat(item.laborPrice || 0)))}</td>
-            <td>${item.unit || 'N/A'}</td>
-            <td>${item.location || 'N/A'}</td>
-        `;
-        tableBody.appendChild(row);
-    });
-    console.log('✅ Table populated with', totalPriceData.length, 'rows');
 }
 
 // Display calculated total prices in the table
@@ -612,17 +594,6 @@ function updateCalculatedStatistics(summary) {
     });
 }
 
-// Format date for display
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-}
-
 // Format number for display
 function formatNumber(number) {
     if (isNaN(number) || number === null || number === undefined) return '0.00';
@@ -643,12 +614,11 @@ function exportToExcel() {
         // Prepare data for Excel
         const excelData = totalPriceData.map(item => ({
             'Material': item.materialName || 'N/A',
-            'Quantity': `${item.quantity || 'N/A'} ${item.unit || ''}`,
+            'Total Quantity': `${item.quantity || 'N/A'} ${item.unit || ''}`,
             'Material Cost': `$${formatNumber(item.materialCost)}`,
             'Labor Cost': `$${formatNumber(item.laborCost)}`,
             'Total Price': `$${formatNumber(item.totalPrice)}`,
-            'Location': item.location || 'N/A',
-            'Users': item.usernames ? item.usernames.join(', ') : 'N/A'
+            'Location': item.location || 'N/A'
         }));
 
         // Add grand total row
@@ -658,12 +628,11 @@ function exportToExcel() {
         
         excelData.push({
             'Material': 'TOTAL',
-            'Quantity': '',
+            'Total Quantity': '',
             'Material Cost': `$${formatNumber(totalMaterialCost)}`,
             'Labor Cost': `$${formatNumber(totalLaborCost)}`,
             'Total Price': `$${formatNumber(grandTotal)}`,
-            'Location': '',
-            'Users': ''
+            'Location': ''
         });
 
         console.log('📋 Excel data prepared:', excelData);
@@ -673,14 +642,14 @@ function exportToExcel() {
         const ws = XLSX.utils.json_to_sheet(excelData);
 
         // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Calculated Total Prices');
+        XLSX.utils.book_append_sheet(wb, ws, 'Manager Total Prices');
 
         // Generate filename
         const selectedSite = document.getElementById('siteSelect')?.value || 'unknown';
         const selectedCompany = document.getElementById('companySelect')?.value || 'unknown';
         const startDate = document.getElementById('startDate')?.value || 'unknown';
         const endDate = document.getElementById('endDate')?.value || 'unknown';
-        const filename = `CalculatedTotalPrices_${selectedSite}_${selectedCompany}_${startDate}_to_${endDate}.xlsx`;
+        const filename = `ManagerTotalPrices_${selectedSite}_${selectedCompany}_${startDate}_to_${endDate}.xlsx`;
 
         console.log('💾 Saving file as:', filename);
 
@@ -688,7 +657,7 @@ function exportToExcel() {
         XLSX.writeFile(wb, filename);
         
         console.log('✅ Excel file exported successfully');
-        showMessage('Calculated data exported to Excel successfully!', 'success');
+        showMessage('Manager data exported to Excel successfully!', 'success');
         
     } catch (error) {
         console.error('❌ Error exporting to Excel:', error);
@@ -757,46 +726,11 @@ function showMessage(message, type = 'info') {
 
 // Logout function
 function logout() {
-    console.log('👋 Logging out...');
+    console.log('👋 Manager logging out...');
     localStorage.removeItem('token');
-    window.location.href = '/login';
-}
-
-// Add some utility functions for better data handling
-function validateDateRange(startDate, endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const today = new Date();
-    
-    // Check if dates are in the future
-    if (start > today || end > today) {
-        return { valid: false, message: 'Dates cannot be in the future.' };
-    }
-    
-    // Check if date range is too large (more than 1 year)
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays > 365) {
-        return { valid: false, message: 'Date range cannot exceed 1 year.' };
-    }
-    
-    return { valid: true };
-}
-
-// Enhanced error handling
-function handleApiError(error, context) {
-    console.error(`❌ Error in ${context}:`, error);
-    
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        showMessage('Network error. Please check your connection.', 'error');
-    } else if (error.status === 401) {
-        showMessage('Session expired. Please login again.', 'error');
-        setTimeout(() => {
-            logout();
-        }, 2000);
-    } else if (error.status === 403) {
-        showMessage('Access denied. Admin privileges required.', 'error');
-    } else {
-        showMessage(`Error: ${error.message || 'Unknown error occurred'}`, 'error');
-    }
+    localStorage.removeItem('user');
+    localStorage.removeItem('managerAccess');
+    localStorage.removeItem('managerSite');
+    localStorage.removeItem('managerCompany');
+    window.location.href = '/manager-login';
 } 

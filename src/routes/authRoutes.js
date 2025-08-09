@@ -18,6 +18,9 @@ router.get('/current-user', authenticate, authController.getCurrentUser);
 // Get all users (admin only)
 router.get('/users', authenticate, isAdmin, authController.getAllUsers);
 
+// Get users (for managers)
+router.get('/users/recent', authenticate, authController.getUsers);
+
 // Logout user
 router.post('/logout', authController.logout);
 

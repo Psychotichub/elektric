@@ -1,44 +1,66 @@
+require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const path = require('path');
-const fs = require('fs');
-require('dotenv').config();
 const cookieParser = require('cookie-parser');
-
-// Existing routes (still using single database)
-const dailyReportRoutes = require('./src/routes/dailyReportRoutes');
-const materialRoutes = require('./src/routes/materialRoutes');
-const receivedRoutes = require('./src/routes/receivedRoutes');
-const totalPriceRoutes = require('./src/routes/totalPriceRoutes');
-const authRoutes = require('./src/routes/authRoutes');
-
-// New user-specific database routes (ensures data goes to user's database folder)
-const userAllRoutes = require('./src/routes/userAllRoutes');
-const adminDatabaseRoutes = require('./src/routes/adminDatabaseRoutes');
-const adminSiteRoutes = require('./src/routes/adminSiteRoutes');
-
-// New site-based database routes
-const siteAdminRoutes = require('./src/routes/siteAdminRoutes');
-
-// Settings routes
-const settingsRoutes = require('./src/routes/settingsRoutes');
-
-const { connectToMongo } = require('./src/db/mongo'); //optional
+const helmet = require('helmet');
+const { connectToMongo } = require('./src/db/mongo');
 const { connectToMongoose } = require('./src/db/mongoose');
-const { default: helmet } = require('helmet');
-const { authenticate, authorize } = require('./src/middleware/auth');
+
+// Import routes
+const authRoutes = require('./src/routes/authRoutes');
+const settingsRoutes = require('./src/routes/settingsRoutes');
+const userAllRoutes = require('./src/routes/userAllRoutes');
+const adminSiteRoutes = require('./src/routes/adminSiteRoutes');
+const managerRoutes = require('./src/routes/managerRoutes');
+
+// Import middleware
+const { authenticate } = require('./src/middleware/auth');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(helmet());
-app.use(cors());
+// Security middleware
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            baseUri: ["'self'"],
+            fontSrc: ["'self'", "https:", "data:"],
+            formAction: ["'self'"],
+            frameAncestors: ["'self'"],
+            imgSrc: ["'self'", "data:"],
+            objectSrc: ["'none'"],
+            scriptSrc: ["'self'"],
+            scriptSrcAttr: ["'none'"],
+            styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+            upgradeInsecureRequests: []
+        }
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "same-origin" },
+    crossOriginOpenerPolicy: { policy: "same-origin" },
+    dnsPrefetchControl: { allow: false },
+    frameguard: { action: "deny" },
+    hidePoweredBy: true,
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    ieNoOpen: true,
+    noSniff: true,
+    permittedCrossDomainPolicies: { permittedPolicies: "none" },
+    referrerPolicy: { policy: "no-referrer" },
+    xssFilter: true
+}));
 
-app.use((req, res, next) => {
-    res.setHeader('Cache-control', 'no-cache, no-store');
-    next();
-})
+// CORS configuration
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://yourdomain.com'] 
+        : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'Public')));
@@ -54,9 +76,19 @@ app.get('/register', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'Public', 'html', 'register.html'));
 });
 
-// Serve admin site total price management page
-app.get('/admin-site-totalprice', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'admin-site-totalprice.html'));
+// Serve manager login page
+app.get('/manager-login', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager-login.html'));
+});
+
+// Serve manager dashboard page
+app.get('/manager-dashboard', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager-dashboard.html'));
+});
+
+// Serve manager create user page
+app.get('/manager-create-user', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager-create-user.html'));
 });
 
 // Serve settings page
@@ -86,6 +118,10 @@ app.use('/api/settings', settingsRoutes);
 // Re-enabled temporarily for frontend compatibility
 app.use('/api/user', userAllRoutes);
 
+// ===== MANAGER ROUTES =====
+// These routes provide manager access to site total price management
+app.use('/api/manager', managerRoutes);
+
 // ===== ADMIN DATABASE MANAGEMENT ROUTES =====
 // Temporarily disabled to prevent conflicts with new site-based system
 // app.use('/api/admin', adminDatabaseRoutes);
@@ -93,10 +129,6 @@ app.use('/api/user', userAllRoutes);
 // ===== ADMIN SITE ROUTES (NEW) =====
 // These routes allow site admins to fetch all user data from their site at once
 app.use('/api/admin', adminSiteRoutes);
-
-// ===== SITE ADMIN ROUTES (NEW) =====
-// These routes manage site-based database structure
-app.use('/api/site-admin', siteAdminRoutes);
 
 // ===== EXISTING ROUTES (still using single database) =====
 // These routes still use the old single database system
