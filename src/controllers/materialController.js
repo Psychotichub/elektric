@@ -116,9 +116,14 @@ const updateMaterial = async (req, res) => {
         // Mirror update to site-scoped database
         try {
             const siteModels = await getSiteModels(req.user.site, req.user.company);
+            const existing = await siteModels.SiteMaterial.findOne({ materialName: originalMaterialName });
+            const updateData = { materialName, unit, materialPrice, laborPrice };
+            if (existing && (!existing.createdBy || existing.createdBy === '')) {
+                updateData.createdBy = req.user.username || existing.createdBy;
+            }
             await siteModels.SiteMaterial.findOneAndUpdate(
                 { materialName: originalMaterialName },
-                { materialName, unit, materialPrice, laborPrice },
+                updateData,
                 { new: true }
             );
         } catch (e) {

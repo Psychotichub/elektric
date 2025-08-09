@@ -19,9 +19,7 @@ async function getManagerOwnedUsernames(managerId, managerUsername) {
         // Include the manager themselves
         if (managerUsername) usernames.push(managerUsername);
         
-        const finalUsernames = Array.from(new Set(usernames));
-        console.log(`🔍 Manager ${managerUsername} owns usernames:`, finalUsernames);
-        return finalUsernames;
+        return Array.from(new Set(usernames));
     } catch (e) {
         console.error('Error getting manager owned usernames:', e);
         return managerUsername ? [managerUsername] : [];

@@ -38,7 +38,8 @@ const addMaterial = async (req, res) => {
             materialName, 
             unit, 
             materialPrice, 
-            laborPrice
+            laborPrice,
+            createdBy: req.user.username || null
         });
         await material.save();
         res.status(201).json(material);
@@ -86,9 +87,15 @@ const updateMaterial = async (req, res) => {
             }
         }
 
+        // Ensure createdBy exists for legacy records
+        const existing = await siteModels.SiteMaterial.findOne({ materialName: originalMaterialName });
+        const updateData = { materialName, unit, materialPrice, laborPrice };
+        if (existing && (!existing.createdBy || existing.createdBy === '')) {
+            updateData.createdBy = req.user.username || existing.createdBy;
+        }
         const material = await siteModels.SiteMaterial.findOneAndUpdate(
             { materialName: originalMaterialName },
-            { materialName, unit, materialPrice, laborPrice },
+            updateData,
             { new: true }
         );
         
