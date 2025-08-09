@@ -77,28 +77,60 @@ exports.requireManagerAccess = (req, res, next) => {
   next();
 };
 
-// Site-based authorization middleware - ALL users (including admins) are restricted to their own site
-exports.requireSiteAccess = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Authentication required.' 
-    });
-  }
+// Site-based authorization middleware
+// Ensures requests resolve to a site/company context.
+// Priority:
+// 1) If token already has site/company -> use it
+// 2) If query/headers provide site/company (manager/admin) -> use them
+// 3) If role is manager and no site/company -> derive from a created user
+// Otherwise -> 403
+exports.requireSiteAccess = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
 
-  // ALL users (including admins) can only access their own site
-  if (!req.user.site) {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Site access not configured for this user.' 
-    });
-  }
+    // If already present in token, use it
+    if (req.user.site && req.user.company) {
+      req.userSite = req.user.site;
+      req.userCompany = req.user.company;
+      return next();
+    }
 
-  // Add site filter to request for controllers to use
-  req.userSite = req.user.site;
-  req.userCompany = req.user.company;
-  
-  next();
+    // Allow manager/admin to pass site/company via query or headers
+    const candidateSite = req.query.site || req.headers['x-site'];
+    const candidateCompany = req.query.company || req.headers['x-company'];
+    if ((req.user.role === 'manager' || req.user.role === 'admin') && candidateSite && candidateCompany) {
+      req.user.site = String(candidateSite);
+      req.user.company = String(candidateCompany);
+      req.userSite = req.user.site;
+      req.userCompany = req.user.company;
+      return next();
+    }
+
+    // As a convenience, if manager has no site/company, try to derive from any user they created
+    if (req.user.role === 'manager' && (!req.user.site || !req.user.company)) {
+      try {
+        const User = require('../models/user');
+        const ownedUser = await User.findOne({ 'createdBy.id': req.user.id, site: { $exists: true }, company: { $exists: true } })
+          .select('site company')
+          .lean();
+        if (ownedUser && ownedUser.site && ownedUser.company) {
+          req.user.site = ownedUser.site;
+          req.user.company = ownedUser.company;
+          req.userSite = ownedUser.site;
+          req.userCompany = ownedUser.company;
+          return next();
+        }
+      } catch (e) {
+        // Fall through to error response
+      }
+    }
+
+    return res.status(403).json({ success: false, message: 'Site access not configured for this user.' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error resolving site access.', error: err.message });
+  }
 };
 
 // Create a generic authorization middleware for specific actions

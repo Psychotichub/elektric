@@ -1,0 +1,11 @@
+CompanyName_Manager
+        --users_manager
+        --Site_Name
+                    --users
+                            --admin
+                            --user
+                    --site_daily_report
+                    --site_received
+                    --site_materials
+                    --site_total_price
+                    --site_monthly_report

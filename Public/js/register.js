@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Object.assign(headers, authHeaders);
             } else {
                 // Fallback to basic token check
-                const token = localStorage.getItem('token');
+                const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
                 if (token) {
                     headers['Authorization'] = `Bearer ${token}`;
                 }

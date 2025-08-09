@@ -1,0 +1,115 @@
+Project Schemas (High-level)
+
+1) Core User (src/models/user.js)
+- username: String, required, unique per (username, site, company) for role 'user'; unique by username for roles 'manager'/'admin'
+- password: String, required (bcrypt hashed pre-save)
+- site: String, required when role === 'user'
+- company: String, required when role === 'user'
+- role: 'admin' | 'manager' | 'user' (default 'user')
+- createdBy: { id: ObjectId(User) | null, username: String|null, role: String|null }
+- createdAt: Date (default now)
+- Indexes:
+  - { username, site, company } unique, partial (role: 'user')
+  - { username } unique, partial (role in ['manager','admin'])
+
+2) Site-scoped Models (src/models/siteUserModels.js: createSiteModels)
+- modelSuffix: `${site}_${company}` normalized; models are unique per site/company
+
+2.1) SiteConfig (collection: siteConfig)
+- siteName: String, required
+- companyName: String, required
+- settings: { currency: String='USD', timezone: String='UTC', dateFormat: String='YYYY-MM-DD', backupFrequency: String='weekly' }
+- createdAt: Date (default now)
+- updatedAt: Date (default now)
+
+2.2) SiteUser (collection: siteUsers)
+- username: String, required
+- password: String, required
+- email: String
+- role: 'admin' | 'manager' | 'user' (default 'user')
+- permissions: [ 'read' | 'write' | 'delete' | 'admin' ]
+- isActive: Boolean (default true)
+- lastLogin: Date
+- createdAt: Date (default now)
+- updatedAt: Date (default now)
+- Index: { username, site, company } unique
+
+2.3) SiteMaterial (collection: siteMaterials)
+- materialName: String, required
+- unit: String, required
+- materialPrice: Number, required
+- laborPrice: Number, required
+- category: String='General'
+- supplier: String
+- isActive: Boolean=true
+- createdBy: String, required (username)
+- createdAt: Date (default now)
+- updatedAt: Date (default now)
+
+2.4) SiteActivityLog (collection: siteActivityLogs)
+- userId: String, required
+- action: String, required
+- resource: String, required
+- details: Mixed
+- timestamp: Date (default now)
+- ipAddress: String
+- userAgent: String
+
+3) User-scoped Models (src/models/siteUserModels.js: createUserModels)
+- modelSuffix: `${userId}_${site}_${company}` normalized; unique per user and site/company
+
+3.1) UserMaterial (collection: userMaterials)
+- materialName: String, required
+- unit: String, required
+- materialPrice: Number, required
+- laborPrice: Number, required
+- category: String='General'
+- supplier: String
+- isActive: Boolean=true
+- createdBy: String, required (username)
+- createdAt: Date (default now)
+- updatedAt: Date (default now)
+
+3.2) UserDailyReport (collection: userDailyReports)
+- date: Date, required
+- materialName: String, required
+- quantity: Number, required
+- unit: String, required
+- location: String
+- notes: String
+- createdBy: String, required (username)
+- createdAt: Date (default now)
+- updatedAt: Date (default now)
+
+3.3) UserReceived (collection: userReceived)
+- date: Date, required
+- materialName: String, required
+- quantity: Number, required
+- unit: String, required
+- supplier: String, required
+- location: String
+- notes: String
+- createdBy: String, required (username)
+- createdAt: Date (default now)
+- updatedAt: Date (default now)
+
+3.4) UserTotalPrice (collection: userTotalPrices)
+- date: Date, required
+- materialName: String, required
+- quantity: Number, required
+- unit: String, required
+- materialPrice: Number, required
+- laborPrice: Number, required
+- materialCost: Number, required
+- laborCost: Number, required
+- totalPrice: Number, required
+- location: String
+- notes: String
+- createdBy: String, required (username)
+- createdAt: Date (default now)
+- updatedAt: Date (default now)
+
+Notes
+- Manager access restrictions are enforced in controllers using createdBy for ownership and req.user role.
+- Site models are derived per site/company to isolate data.
+

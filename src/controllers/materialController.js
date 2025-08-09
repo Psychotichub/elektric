@@ -1,4 +1,5 @@
 const Material = require('../models/material');
+const { getSiteModels } = require('../models/siteDatabase');
 
 // Get all materials for the user's site
 const getMaterials = async (req, res) => {
@@ -40,6 +41,21 @@ const addMaterial = async (req, res) => {
             company: req.user.company
         });
         await material.save();
+
+        // Also ensure site-scoped database has this material with pricing
+        try {
+            const siteModels = await getSiteModels(req.user.site, req.user.company);
+            // Upsert into SiteMaterial (createdBy is required in site schema)
+            await siteModels.SiteMaterial.findOneAndUpdate(
+                { materialName },
+                { materialName, unit, materialPrice, laborPrice, createdBy: req.user.username || 'system' },
+                { upsert: true, new: true }
+            );
+        } catch (e) {
+            // Do not block the main response on site mirror errors
+            console.error('Failed to mirror material to site database:', e.message);
+        }
+
         res.status(201).json(material);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -96,7 +112,19 @@ const updateMaterial = async (req, res) => {
         if (!material) {
             return res.status(404).json({ message: 'Material not found.' });
         }
-        
+
+        // Mirror update to site-scoped database
+        try {
+            const siteModels = await getSiteModels(req.user.site, req.user.company);
+            await siteModels.SiteMaterial.findOneAndUpdate(
+                { materialName: originalMaterialName },
+                { materialName, unit, materialPrice, laborPrice },
+                { new: true }
+            );
+        } catch (e) {
+            console.error('Failed to update site material pricing:', e.message);
+        }
+
         res.json(material);
     } catch (error) {
         res.status(500).json({ message: error.message });

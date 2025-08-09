@@ -44,6 +44,7 @@ const addTotalPrice = async (req, res) => {
             // Add pricing information to the total price record
             return {
                 ...material,
+                username: req.user.username,
                 materialPrice: materialData.materialPrice,
                 laborPrice: materialData.laborPrice,
                 materialCost: materialCost,

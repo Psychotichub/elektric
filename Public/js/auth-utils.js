@@ -183,6 +183,16 @@ async function authenticatedFetch(url, options = {}) {
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         'Content-Type': 'application/json'
     };
+
+    // Attach site/company context for manager/admin when available in localStorage
+    try {
+        const lsSite = localStorage.getItem('managerSite');
+        const lsCompany = localStorage.getItem('managerCompany');
+        if (lsSite && lsCompany) {
+            if (!options.headers['X-Site']) options.headers['X-Site'] = lsSite;
+            if (!options.headers['X-Company']) options.headers['X-Company'] = lsCompany;
+        }
+    } catch (_) { /* ignore storage errors */ }
     
     // Always include credentials to send cookies
     options.credentials = 'include';

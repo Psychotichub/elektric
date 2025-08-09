@@ -3,11 +3,27 @@ const User = require('../models/user');
 
 async function getManagerOwnedUsernames(managerId, managerUsername) {
     try {
-        const users = await User.find({ 'createdBy.id': managerId }).select('username');
-        const usernames = users.map(u => u.username);
+        // Get all users directly created by this manager
+        const directUsers = await User.find({ 'createdBy.id': managerId }).select('username _id role');
+        const usernames = directUsers.map(u => u.username);
+        
+        // Get admins created by this manager
+        const adminsCreatedByManager = directUsers.filter(u => u.role === 'admin');
+        
+        // For each admin created by manager, get users they created
+        for (const admin of adminsCreatedByManager) {
+            const usersCreatedByAdmin = await User.find({ 'createdBy.id': admin._id }).select('username');
+            usernames.push(...usersCreatedByAdmin.map(u => u.username));
+        }
+        
+        // Include the manager themselves
         if (managerUsername) usernames.push(managerUsername);
-        return Array.from(new Set(usernames));
+        
+        const finalUsernames = Array.from(new Set(usernames));
+        console.log(`🔍 Manager ${managerUsername} owns usernames:`, finalUsernames);
+        return finalUsernames;
     } catch (e) {
+        console.error('Error getting manager owned usernames:', e);
         return managerUsername ? [managerUsername] : [];
     }
 }
@@ -39,13 +55,42 @@ exports.calculateTotalPrices = async (req, res) => {
         };
 
         // If requester is a manager, restrict to data created by the manager or users they created
-        if (req.user?.role === 'manager') {
-            const allowedUsernames = await getManagerOwnedUsernames(req.user.id, req.user.username);
+        let allowedUsernames = [];
+        const isManager = req.user?.role === 'manager';
+        if (isManager) {
+            allowedUsernames = await getManagerOwnedUsernames(req.user.id, req.user.username);
             reportFilter.username = { $in: allowedUsernames };
         }
 
         // Get daily reports for the date range (and username filter if applied)
-        const dailyReports = await siteModels.SiteDailyReport.find(reportFilter);
+        let dailyReports = await siteModels.SiteDailyReport.find(reportFilter);
+
+        // Fallback: if no daily reports, try using precomputed total prices for the range
+        let usingPrecomputedTotals = false;
+        if (!dailyReports || dailyReports.length === 0) {
+            const totalFilter = {
+                date: reportFilter.date
+            };
+            if (reportFilter.username) {
+                totalFilter.username = reportFilter.username;
+            }
+            const totalPrices = await siteModels.SiteTotalPrice.find(totalFilter);
+            if (totalPrices && totalPrices.length > 0) {
+                usingPrecomputedTotals = true;
+                // Map totals into a dailyReports-like shape for unified aggregation
+                dailyReports = totalPrices.map(tp => ({
+                    materialName: tp.materialName,
+                    quantity: tp.quantity,
+                    unit: tp.unit,
+                    materialPrice: tp.materialPrice,
+                    labourPrice: tp.laborPrice, // normalize key
+                    totalPrice: tp.totalPrice,
+                    materialCost: tp.materialCost,
+                    laborCost: tp.laborCost,
+                    location: tp.location
+                }));
+            }
+        }
 
         console.log(`📊 Found ${dailyReports.length} daily reports for ${site}_${company}`);
 
@@ -69,9 +114,17 @@ exports.calculateTotalPrices = async (req, res) => {
             
             // Add quantities and costs
             materialTotals[materialName].quantity += report.quantity || 0;
-            materialTotals[materialName].materialCost += (report.materialPrice || 0) * (report.quantity || 0);
-            materialTotals[materialName].laborCost += (report.labourPrice || 0) * (report.quantity || 0);
-            materialTotals[materialName].totalPrice += ((report.materialPrice || 0) + (report.labourPrice || 0)) * (report.quantity || 0);
+            if (usingPrecomputedTotals) {
+                materialTotals[materialName].materialCost += report.materialCost || 0;
+                materialTotals[materialName].laborCost += report.laborCost || 0;
+                materialTotals[materialName].totalPrice += report.totalPrice || 0;
+            } else {
+                const mPrice = report.materialPrice || 0;
+                const lPrice = report.labourPrice || 0;
+                materialTotals[materialName].materialCost += mPrice * (report.quantity || 0);
+                materialTotals[materialName].laborCost += lPrice * (report.quantity || 0);
+                materialTotals[materialName].totalPrice += (mPrice + lPrice) * (report.quantity || 0);
+            }
         });
 
         // Convert to array and calculate summary

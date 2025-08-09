@@ -2,7 +2,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication status
     function checkAuth() {
-        const token = localStorage.getItem('token');
+        // Prefer shared auth-utils getter when available
+        const token = (typeof getToken === 'function') 
+            ? getToken() 
+            : (sessionStorage.getItem('token') || localStorage.getItem('token'));
         const user = localStorage.getItem('user');
         
         // Get current page path
@@ -37,12 +40,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!options.headers) {
                 options.headers = {};
             }
-            
-            options.headers = {
-                ...options.headers,
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            };
+            // Resolve token dynamically each call to honor sessionStorage/localStorage
+            const currentToken = (typeof getToken === 'function') 
+                ? getToken() 
+                : (sessionStorage.getItem('token') || localStorage.getItem('token'));
+            if (currentToken) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                };
+            }
             
             return originalFetch(url, options);
         };

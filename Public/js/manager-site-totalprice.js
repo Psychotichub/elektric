@@ -1,7 +1,7 @@
 
-(function(){
-  const __console = (typeof window !== 'undefined' && window.console) ? window.console : { log: function(){} };
-  const console = Object.assign({}, __console, { log: function(){} });
+//(function(){
+//  const __console = (typeof window !== 'undefined' && window.console) ? window.console : { log: function(){} };
+//  const console = Object.assign({}, __console, { log: function(){} });
 
 // Global variables
 let currentUser = null;
@@ -82,6 +82,7 @@ function setupEventListeners() {
         siteSelect.addEventListener('change', function() {
             console.log('📍 Site selected:', this.value);
             updateCompanyOptions(this.value);
+            if (this.value) localStorage.setItem('managerSite', this.value);
         });
         console.log('✅ Site select event listener added');
     }
@@ -89,6 +90,7 @@ function setupEventListeners() {
     if (companySelect) {
         companySelect.addEventListener('change', function() {
             console.log('🏢 Company selected:', this.value);
+            if (this.value) localStorage.setItem('managerCompany', this.value);
         });
     }
 
@@ -161,7 +163,7 @@ function setResultsVisible(visible) {
 
 // Check if user is authenticated and is manager
 function checkAuthentication() {
-    const token = localStorage.getItem('token');
+    const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
     const managerAccess = localStorage.getItem('managerAccess');
     
     if (!token) {
@@ -175,6 +177,11 @@ function checkAuthentication() {
         window.location.href = '/manager-login';
         return;
     }
+
+    // Clear any potentially stale site/company cache on page load
+    console.log('🧹 Clearing potentially stale site/company cache');
+    localStorage.removeItem('managerSite');
+    localStorage.removeItem('managerCompany');
 
     // Decode JWT token to get user info
     try {
@@ -198,7 +205,7 @@ function checkAuthentication() {
 // Load available sites from the database
 async function loadAvailableSites() {
     try {
-        const token = localStorage.getItem('token');
+        const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
 
         // Decode token to see current user info
         let payload = null;
@@ -210,7 +217,7 @@ async function loadAvailableSites() {
             }
         }
 
-        // Admins can query site users; managers use their own site/company from token
+    // Admins can query site users; managers try their own site/company from token or fallback to users they created
         if (payload?.role === 'admin') {
             const response = await fetch('/api/admin/site/users', {
                 headers: {
@@ -244,16 +251,48 @@ async function loadAvailableSites() {
             availableSites = Array.from(sites);
             availableCompanies = Array.from(companies);
         } else {
-            // Manager mode: restrict to own site/company
-            availableSites = payload?.site ? [payload.site] : [];
-            availableCompanies = payload?.company ? [payload.company] : [];
+            // Manager mode: try token first
+            // Also check previously saved managerSite/managerCompany in localStorage
+            const savedSite = localStorage.getItem('managerSite');
+            const savedCompany = localStorage.getItem('managerCompany');
+            availableSites = payload?.site ? [payload.site] : (savedSite ? [savedSite] : []);
+            availableCompanies = payload?.company ? [payload.company] : (savedCompany ? [savedCompany] : []);
+            
             if (availableSites.length === 0 || availableCompanies.length === 0) {
-                console.warn('⚠️ Manager has no site/company assigned in token. Limited functionality.');
+                // Fallback: ask backend for users created by this manager and derive site/company from them
+                try {
+                    const resp = await fetch('/api/auth/users/recent', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        const sites = new Set();
+                        const companies = new Set();
+                        (data.users || []).forEach(u => {
+                            if (u.site) sites.add(u.site);
+                            if (u.company) companies.add(u.company);
+                        });
+                        availableSites = availableSites.length ? availableSites : Array.from(sites);
+                        availableCompanies = availableCompanies.length ? availableCompanies : Array.from(companies);
+                    }
+                } catch (_) { /* ignore */ }
+            }
+            // If we resolved exactly one site/company, persist for future requests
+            if (availableSites.length === 1) {
+                localStorage.setItem('managerSite', availableSites[0]);
+            }
+            if (availableCompanies.length === 1) {
+                localStorage.setItem('managerCompany', availableCompanies[0]);
             }
         }
 
         console.log('🏢 Available sites:', availableSites);
         console.log('🏢 Available companies:', availableCompanies);
+        console.log('🔍 Debug - Sites array:', JSON.stringify(availableSites));
+        console.log('🔍 Debug - Companies array:', JSON.stringify(availableCompanies));
         
         if (availableSites.length === 0) {
             console.log('⚠️ No sites available');
@@ -466,9 +505,12 @@ async function fetchTotalPrices() {
     showLoading(true);
     
     try {
-        const token = localStorage.getItem('token');
+        const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
         const selectedSite = siteSelect.value;
         const selectedCompany = companySelect.value;
+        // Persist for API middleware headers
+        localStorage.setItem('managerSite', selectedSite);
+        localStorage.setItem('managerCompany', selectedCompany);
         
         // Use manager-specific API endpoint
         const apiUrl = `/api/manager/site/calculate-total-prices?site=${selectedSite}&company=${selectedCompany}&startDate=${startDate.value}&endDate=${endDate.value}`;
@@ -481,7 +523,9 @@ async function fetchTotalPrices() {
         const response = await fetch(apiUrl, {
             headers: {
                 'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Site': selectedSite,
+                'X-Company': selectedCompany
             }
         });
 
@@ -555,7 +599,7 @@ function displayCalculatedTotalPrices() {
     
     if (totalPriceData.length === 0) {
         console.log('📭 No data to display');
-        tableBody.innerHTML = '<tr><td colspan="6" class="no-data">No records found for the selected criteria.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" class="no-data">No records found for the selected criteria.</td></tr>';
         return;
     }
 
@@ -574,7 +618,6 @@ function displayCalculatedTotalPrices() {
             <td>$${formatNumber(item.materialCost)}</td>
             <td>$${formatNumber(item.laborCost)}</td>
             <td>$${formatNumber(item.totalPrice)}</td>
-            <td>${item.location || 'N/A'}</td>
         `;
         tableBody.appendChild(row);
     });
@@ -592,7 +635,6 @@ function displayCalculatedTotalPrices() {
         <td><strong>$${formatNumber(totalMaterialCost)}</strong></td>
         <td><strong>$${formatNumber(totalLaborCost)}</strong></td>
         <td><strong>$${formatNumber(grandTotal)}</strong></td>
-        <td></td>
     `;
     tableBody.appendChild(totalRow);
     
@@ -691,7 +733,6 @@ function getSortKeyByColumnIndex(index) {
         case 2: return 'materialCost';
         case 3: return 'laborCost';
         case 4: return 'totalPrice';
-        case 5: return 'location';
         default: return null;
     }
 }
@@ -746,7 +787,7 @@ function renderTable() {
 
 function updateSortHeaderStyles(headers) {
     headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
-    const index = ['materialName', 'quantity', 'materialCost', 'laborCost', 'totalPrice', 'location'].indexOf(tableSort.key);
+    const index = ['materialName', 'quantity', 'materialCost', 'laborCost', 'totalPrice'].indexOf(tableSort.key);
     if (index >= 0 && headers[index]) {
         headers[index].classList.add(tableSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
     }
@@ -899,5 +940,3 @@ function logout() {
     localStorage.removeItem('managerCompany');
     window.location.href = '/manager-login';
 }
-
-})();

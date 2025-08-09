@@ -25,8 +25,9 @@ const addReceivedItem = async (req, res) => {
         // Get site-specific models
         const siteModels = await getSiteModels(req.user.site, req.user.company);
         
-        // Create new received items in site-specific database
-        const newReceivedItems = await siteModels.SiteReceived.insertMany(materials);
+        // Attach username and create new received items in site-specific database
+        const itemsWithUser = materials.map(m => ({ ...m, username: req.user.username }));
+        const newReceivedItems = await siteModels.SiteReceived.insertMany(itemsWithUser);
         res.status(201).json(newReceivedItems);
     } catch (error) {
         console.error('Error adding received items:', error);

@@ -90,6 +90,7 @@ async function createSiteModels(site, company) {
 
   // Daily Report Schema for this site
   const dailyReportSchema = new mongoose.Schema({
+    username: { type: String, required: true },
     date: { type: Date, required: true },
     materialName: { type: String, required: true },
     quantity: { type: Number, required: true },
@@ -108,12 +109,14 @@ async function createSiteModels(site, company) {
     unit: { type: String, required: true },
     materialPrice: { type: Number, required: true },
     laborPrice: { type: Number, required: true },
+    createdBy: { type: String },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
   });
 
   // Received Schema for this site
   const receivedSchema = new mongoose.Schema({
+    username: { type: String, required: true },
     date: { type: Date, required: true },
     materialName: { type: String, required: true },
     quantity: { type: Number, required: true },
@@ -127,6 +130,7 @@ async function createSiteModels(site, company) {
 
   // Total Price Schema for this site
   const totalPriceSchema = new mongoose.Schema({
+    username: { type: String, required: true },
     date: { type: Date, required: true },
     materialName: { type: String, required: true },
     quantity: { type: Number, required: true },

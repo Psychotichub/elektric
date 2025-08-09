@@ -124,7 +124,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    // First, try to find user by username only (for managers)
+    // First, try to find user by username only
     console.log('🔍 Searching for user by username only:', { username });
     let user = await User.findOne({ 
       username: { $regex: new RegExp(`^${username}$`, 'i') }
@@ -138,25 +138,34 @@ exports.login = async (req, res) => {
     } : 'No user found');
 
     // If user found and is a manager, allow login without site/company
-    if (user && (user.role === 'manager' || user.role === 'admin')) {
-      console.log('✅ Manager/Admin login - bypassing site/company validation');
+    if (user && user.role === 'manager') {
+      console.log('✅ Manager login - bypassing site/company validation');
     } else {
-      // For regular users, require site and company
-      if (!site || !company) {
-        console.log('❌ Site and company required for regular users');
+      // For admins/users, require exact site and company (case-insensitive, full match)
+      const inputSite = String(site || '').trim();
+      const inputCompany = String(company || '').trim();
+      if (!inputSite || !inputCompany) {
+        console.log('❌ Site and company required for admin/user');
         return res.status(400).json({ 
           success: false,
-          message: 'Site and company are required for regular users' 
+          message: 'Site and company are required for admin/user login' 
         });
       }
 
-      // Find user by username, site, and company (case-insensitive)
-      console.log('🔍 Searching for regular user with criteria:', { username, site, company });
-      user = await User.findOne({ 
-        username: { $regex: new RegExp(`^${username}$`, 'i') },
-        site: { $regex: new RegExp(`^${site}$`, 'i') },
-        company: { $regex: new RegExp(`^${company}$`, 'i') }
-      });
+      if (!user) {
+        console.log('❌ No user found for username during admin/user login');
+        return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      }
+
+      const storedSite = String(user.site || '').trim();
+      const storedCompany = String(user.company || '').trim();
+      const siteMatches = storedSite.toLowerCase() === inputSite.toLowerCase();
+      const companyMatches = storedCompany.toLowerCase() === inputCompany.toLowerCase();
+      console.log('🔍 Comparing site/company:', { storedSite, storedCompany, inputSite, inputCompany, siteMatches, companyMatches });
+      if (!siteMatches || !companyMatches) {
+        console.log('❌ Site or company mismatch for admin/user login');
+        return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      }
     }
 
     console.log('🔍 Final user found:', user ? 'Yes' : 'No');
@@ -262,11 +271,27 @@ exports.getUsers = async (req, res) => {
       });
     }
 
-    // Get recent users (last 50)
-    const users = await User.find({})
-      .select('-password') // Exclude password
-      .sort({ createdAt: -1 }) // Most recent first
-      .limit(50);
+    let query = {};
+    if (decoded.role === 'manager') {
+      // Include users created directly by the manager AND
+      // users created by admins that were created by this manager
+      const adminsCreatedByManager = await User.find({ 'createdBy.id': decoded.id, role: 'admin' })
+        .select('_id')
+        .lean();
+      const adminIds = adminsCreatedByManager.map(a => a._id);
+      query = {
+        $or: [
+          { 'createdBy.id': decoded.id },
+          ...(adminIds.length ? [{ 'createdBy.id': { $in: adminIds } }] : [])
+        ]
+      };
+    }
+
+    // Get recent users (last 100)
+    const users = await User.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .limit(100);
 
     console.log(`✅ Retrieved ${users.length} users for manager`);
 

@@ -39,6 +39,7 @@ const addDailyReport = async (req, res) => {
             // Add pricing information to the daily report
             return {
                 ...material,
+                username: req.user.username,
                 materialPrice: materialData.materialPrice,
                 labourPrice: materialData.laborPrice
             };
@@ -81,6 +82,7 @@ const updateDailyReport = async (req, res) => {
                 quantity, 
                 notes, 
                 location,
+                username: req.user.username,
                 materialPrice: materialData.materialPrice,
                 labourPrice: materialData.laborPrice
             },

@@ -1,6 +1,5 @@
 // Manager Create User JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Manager Create User initialized');
     
     const createUserForm = document.getElementById('createUserForm');
     const errorMessage = document.getElementById('error-message');
@@ -11,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check authentication
     function checkAuthentication() {
-        const token = localStorage.getItem('token');
+        const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const managerAccess = localStorage.getItem('managerAccess');
         
@@ -82,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load recent users
     async function loadRecentUsers() {
         try {
-            const token = localStorage.getItem('token');
+            const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
             const response = await fetch('/api/auth/users/recent', {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -135,12 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!checkAuthentication()) return;
         
         const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
         const role = document.getElementById('role').value;
         const site = document.getElementById('site').value.trim();
         const company = document.getElementById('company').value.trim();
         const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
         
         // Validation
         if (!username || !password || !confirmPassword || !role || !site || !company) {
@@ -179,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Creating new user:', { username, role, site, company });
             showMessage('Creating user...', 'info');
             
-            const token = localStorage.getItem('token');
+            const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: {
