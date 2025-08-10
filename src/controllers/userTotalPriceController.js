@@ -55,6 +55,12 @@ const addTotalPrice = async (req, res) => {
         
         // Create new total prices in site-specific database
         const savedMaterials = await siteModels.SiteTotalPrice.insertMany(processedMaterials);
+        try {
+            const { logAction } = require('../middleware/audit');
+            for (const it of savedMaterials) {
+                await logAction(req, req.user.site, req.user.company, 'create', 'totalPrice', it._id, { materialName: it.materialName, quantity: it.quantity, unit: it.unit, totalPrice: it.totalPrice });
+            }
+        } catch (_) {}
         res.status(201).json(savedMaterials);
     } catch (error) {
         console.error('Error saving total prices:', error);
@@ -86,6 +92,10 @@ const updateTotalPrice = async (req, res) => {
             return res.status(404).json({ message: 'Total price not found' });
         }
 
+        try {
+            const { logAction } = require('../middleware/audit');
+            await logAction(req, req.user.site, req.user.company, 'update', 'totalPrice', updatedTotalPrice._id, { materialName, quantity, unit: updatedTotalPrice.unit, totalPrice });
+        } catch (_) {}
         res.status(200).json(updatedTotalPrice);
     } catch (error) {
         console.error('Error updating total price:', error);

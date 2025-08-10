@@ -37,16 +37,30 @@ const addDailyReport = async (req, res) => {
             }
             
             // Add pricing information to the daily report
-            return {
+            const report = {
                 ...material,
                 username: req.user.username,
                 materialPrice: materialData.materialPrice,
                 labourPrice: materialData.laborPrice
             };
+            // Align createdAt/updatedAt to the provided date
+            if (material.date) {
+                const d = new Date(material.date);
+                report.createdAt = d;
+                report.updatedAt = d;
+            }
+            return report;
         }));
         
         // Create new daily report documents in site-specific database
         const newDailyReports = await siteModels.SiteDailyReport.insertMany(processedMaterials);
+        // Audit log
+        try {
+            const { logAction } = require('../middleware/audit');
+            for (const r of newDailyReports) {
+                await logAction(req, req.user.site, req.user.company, 'create', 'dailyReport', r._id, { materialName: r.materialName, quantity: r.quantity, unit: r.unit });
+            }
+        } catch (_) {}
         res.status(201).json(newDailyReports);
     } catch (error) {
         console.error('Error adding daily reports:', error);
@@ -93,6 +107,11 @@ const updateDailyReport = async (req, res) => {
             return res.status(404).json({ message: 'Daily report not found' });
         }
 
+        // Audit log
+        try {
+            const { logAction } = require('../middleware/audit');
+            await logAction(req, req.user.site, req.user.company, 'update', 'dailyReport', updatedDailyReport._id, { materialName, quantity, unit: updatedDailyReport.unit });
+        } catch (_) {}
         res.status(200).json(updatedDailyReport);
     } catch (error) {
         console.error('Error updating daily report:', error);

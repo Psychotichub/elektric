@@ -491,6 +491,8 @@ async function fetchTotalPrices() {
                 const exportBtnEl = document.getElementById('exportBtn');
                 if (exportBtnEl) exportBtnEl.disabled = true;
                 showMessage('No records found for the selected criteria.', 'info');
+                // Still refresh activity logs
+                await loadActivityLogs(selectedSite, selectedCompany);
             } else {
                 displayCalculatedTotalPrices();
                 updateCalculatedStatistics(data.summary);
@@ -500,6 +502,7 @@ async function fetchTotalPrices() {
                 const exportBtnEl = document.getElementById('exportBtn');
                 if (exportBtnEl) exportBtnEl.disabled = false;
                 showMessage(`Successfully calculated ${totalPriceData.length} total price records for ${data.site || selectedSite}, ${data.company || selectedCompany}. Grand Total: $${formatNumber(data.summary?.grandTotal || 0)}`, 'success');
+                await loadActivityLogs(selectedSite, selectedCompany);
             }
         } else {
             throw new Error(data.message || 'Failed to calculate total prices');
@@ -574,6 +577,46 @@ function updateCalculatedStatistics(summary) {
     if (selectedSiteElement) selectedSiteElement.textContent = 'Calculated';
     
 
+}
+
+// Load and render activity logs for current site/company
+async function loadActivityLogs(site, company) {
+    try {
+        const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
+        const url = `/api/manager/site/activity-logs?site=${encodeURIComponent(site)}&company=${encodeURIComponent(company)}&limit=100`;
+        const resp = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!resp.ok) return;
+        const payload = await resp.json();
+        const logs = payload.logs || [];
+
+        const tbody = document.getElementById('activityLogsTableBody');
+        if (!tbody) return;
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="no-data">No activity found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = logs.map(l => {
+            const when = new Date(l.timestamp).toLocaleString();
+            const details = l.details || {};
+            const material = details.materialName || details.name || '';
+            const qtyVal = (details.quantity !== undefined && details.quantity !== null) ? details.quantity : '';
+            const unitVal = details.unit || '';
+            return `<tr>
+                <td>${when}</td>
+                <td>${l.username || ''}</td>
+                <td>${l.role || ''}</td>
+                <td>${l.action || ''}</td>
+                <td>${l.resource || ''}</td>
+                <td>${material}</td>
+                <td>${qtyVal}${unitVal ? ` ${unitVal}` : ''}</td>
+            </tr>`;
+        }).join('');
+    } catch (_) {}
 }
 
 // Open a new window listing all materials (name, unit, prices) for the selected site/company

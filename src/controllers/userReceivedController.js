@@ -26,8 +26,22 @@ const addReceivedItem = async (req, res) => {
         const siteModels = await getSiteModels(req.user.site, req.user.company);
         
         // Attach username and create new received items in site-specific database
-        const itemsWithUser = materials.map(m => ({ ...m, username: req.user.username }));
+        const itemsWithUser = materials.map(m => {
+            const item = { ...m, username: req.user.username };
+            if (m.date) {
+                const d = new Date(m.date);
+                item.createdAt = d;
+                item.updatedAt = d;
+            }
+            return item;
+        });
         const newReceivedItems = await siteModels.SiteReceived.insertMany(itemsWithUser);
+        try {
+            const { logAction } = require('../middleware/audit');
+            for (const it of newReceivedItems) {
+                await logAction(req, req.user.site, req.user.company, 'create', 'received', it._id, { materialName: it.materialName, quantity: it.quantity, unit: it.unit });
+            }
+        } catch (_) {}
         res.status(201).json(newReceivedItems);
     } catch (error) {
         console.error('Error adding received items:', error);
@@ -59,6 +73,10 @@ const updateReceivedItem = async (req, res) => {
             return res.status(404).json({ message: 'Received item not found' });
         }
 
+        try {
+            const { logAction } = require('../middleware/audit');
+            await logAction(req, req.user.site, req.user.company, 'update', 'received', updatedReceivedItem._id, { materialName, quantity, unit: updatedReceivedItem.unit });
+        } catch (_) {}
         res.status(200).json(updatedReceivedItem);
     } catch (error) {
         console.error('Error updating received item:', error);

@@ -10,5 +10,6 @@ router.use(authenticate);
 router.get('/site/calculate-total-prices', requireManagerAccess, managerController.calculateTotalPrices);
 router.get('/site/materials', requireManagerAccess, managerController.getSiteMaterials);
 router.get('/site/statistics', requireManagerAccess, managerController.getSiteStatistics);
+router.get('/site/activity-logs', requireManagerAccess, managerController.getSiteActivityLogs);
 
 module.exports = router; 

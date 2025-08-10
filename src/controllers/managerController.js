@@ -258,3 +258,32 @@ exports.getSiteStatistics = async (req, res) => {
         });
     }
 }; 
+
+// Get site activity logs (simple view for manager dashboard)
+exports.getSiteActivityLogs = async (req, res) => {
+    try {
+        const { site, company, limit = 50 } = req.query;
+        if (!site || !company) {
+            return res.status(400).json({ success: false, message: 'Site and company are required' });
+        }
+        const siteModels = await getSiteModels(site, company);
+
+        const logFilter = {};
+        // Managers can view only their tree; admins can view all
+        if (req.user?.role === 'manager') {
+            const allowedUsernames = await getManagerOwnedUsernames(req.user.id, req.user.username);
+            logFilter.username = { $in: allowedUsernames };
+        }
+
+        const logs = await siteModels.SiteActivityLog
+            .find(logFilter)
+            .sort({ timestamp: -1 })
+            .limit(Math.max(1, Math.min(500, Number(limit))))
+            .lean();
+
+        res.status(200).json({ success: true, logs });
+    } catch (error) {
+        console.error('❌ Error getting site activity logs:', error);
+        res.status(500).json({ success: false, message: 'Failed to get activity logs', error: error.message });
+    }
+};

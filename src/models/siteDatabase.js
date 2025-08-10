@@ -144,6 +144,19 @@ async function createSiteModels(site, company) {
     updatedAt: { type: Date, default: Date.now }
   });
 
+  // Activity Log Schema for this site
+  const activityLogSchema = new mongoose.Schema({
+    username: { type: String, required: true },
+    role: { type: String },
+    action: { type: String, enum: ['create', 'update', 'delete'], required: true },
+    resource: { type: String, required: true },
+    resourceId: { type: mongoose.Schema.Types.ObjectId },
+    details: { type: mongoose.Schema.Types.Mixed },
+    timestamp: { type: Date, default: Date.now },
+    ipAddress: { type: String },
+    userAgent: { type: String }
+  });
+
   // Monthly Report Schema for this site
   const monthlyReportSchema = new mongoose.Schema({
     date: { type: Date, required: true },
@@ -178,6 +191,9 @@ async function createSiteModels(site, company) {
   const SiteMonthlyReport = connection.models[`SiteMonthlyReport_${modelSuffix}`] || 
                             connection.model(`SiteMonthlyReport_${modelSuffix}`, monthlyReportSchema);
 
+  const SiteActivityLog = connection.models[`SiteActivityLog_${modelSuffix}`] ||
+                          connection.model(`SiteActivityLog_${modelSuffix}`, activityLogSchema);
+
   const models = {
     SiteUser,
     SiteDailyReport,
@@ -185,6 +201,7 @@ async function createSiteModels(site, company) {
     SiteReceived,
     SiteTotalPrice,
     SiteMonthlyReport,
+    SiteActivityLog,
     connection
   };
 
