@@ -180,7 +180,8 @@ function initDailyReport() {
         }
     });
 
-    saveButton.addEventListener('click', async () => {
+    saveButton.addEventListener('click', async (e) => {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
         const materialName = materialNameInput.value.trim();
         const quantity = quantityInput.value.trim();
         const location = locationInput.value.trim();
@@ -318,7 +319,7 @@ function initDailyReport() {
                     <td>${report.location}</td>
                     <td>${report.notes || ''}</td>
                     <td>
-                        <button class="edit-btn" data-id="${report._id}">Edit</button>
+                        <button class="edit-btn" data-id="${report._id}" data-date="${report.date}">Edit</button>
                         <button class="delete-btn" data-id="${report._id}">Delete</button>
                     </td>
                 `;
@@ -373,6 +374,7 @@ function initDailyReport() {
     materialsTable.addEventListener('click', async (event) => {
         if (event.target.classList.contains('edit-btn')) {
             const id = event.target.dataset.id;
+            const recordDateRaw = event.target.dataset.date;
             const row = event.target.closest('tr');
             const materialName = row.children[0].textContent.trim();
             const quantity = row.children[1].textContent.split(' ')[0].trim();
@@ -395,10 +397,20 @@ function initDailyReport() {
             
             notesInput.value = notes;
             selectedUnit = unit;
-            locationInput= location;
+            // Set value on the input element instead of reassigning the constant reference
+            locationInput.value = location;
 
             saveButton.textContent = 'Update';
             saveButton.dataset.id = id;
+
+            // Ensure date input matches the record's date (not current date)
+            if (recordDateRaw) {
+                const parsedDate = new Date(recordDateRaw);
+                const ymd = isNaN(parsedDate) ? String(recordDateRaw) : parsedDate.toLocaleDateString('en-CA');
+                if (dateInput) {
+                    dateInput.value = ymd;
+                }
+            }
         }
     });
 

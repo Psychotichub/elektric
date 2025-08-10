@@ -68,27 +68,27 @@ app.use(cookieParser());
 
 // Serve login page
 app.get('/login', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'login.html'));
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'login', 'index.html'));
 });
 
 // Serve register page
 app.get('/register', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'register.html'));
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'register', 'index.html'));
 });
 
 // Serve manager login page
 app.get('/manager-login', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager-login.html'));
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager', 'login.html'));
 });
 
 // Serve manager dashboard page
 app.get('/manager-dashboard', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager-dashboard.html'));
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager', 'dashboard.html'));
 });
 
 // Serve manager create user page
 app.get('/manager-create-user', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager-create-user.html'));
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager', 'create-user.html'));
 });
 
 // Serve settings page
