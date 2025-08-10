@@ -160,7 +160,11 @@ function redirectBasedOnRole() {
                     // Store user data
                     localStorage.setItem('user', JSON.stringify(data.user));
                     //console.log('Redirecting user with role from API:', data.user.role || 'unknown');
-                    window.location.href = '/index';
+                    if (data.user.role === 'manager') {
+                        window.location.href = '/manager-dashboard';
+                    } else {
+                        window.location.href = '/index';
+                    }
                 } else {
                     throw new Error('No user data returned from API');
                 }
@@ -175,8 +179,12 @@ function redirectBasedOnRole() {
         
         //console.log('Redirecting user with role:', user.role || 'unknown');
         
-        // Redirect to index page
-        window.location.href = '/index';
+        // Redirect based on role
+        if (user.role === 'manager') {
+            window.location.href = '/manager-dashboard';
+        } else {
+            window.location.href = '/index';
+        }
     } catch (error) {
         console.error('Error during redirect:', error);
         window.location.href = '/login';

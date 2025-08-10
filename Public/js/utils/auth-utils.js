@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add a small delay to ensure all scripts are loaded
     setTimeout(async () => {
-        const isPublic = publicPages.some(page => currentPage.includes(page));
+        const isPublic = publicPages.some(page => currentPage === page || currentPage.includes(page));
         const authed = isAuthenticated();
 
         if (!isPublic && !authed) {
@@ -350,8 +350,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Apply role-based UI when authenticated either by token or cookie
-        if (isAuthenticated() || (!isPublic && localStorage.getItem('user'))) {
+        // Enforce role-based page access when authenticated
+        const user = getCurrentUser();
+        if (authed && user) {
+            const isManagerPage = currentPage.startsWith('/manager-') || currentPage.startsWith('/manager/');
+            if (user.role === 'manager') {
+                // Managers can only access manager pages
+                if (!isManagerPage && !isPublic) {
+                    window.location.href = '/manager-dashboard';
+                    return;
+                }
+            } else {
+                // Non-managers cannot access manager pages
+                if (isManagerPage) {
+                    window.location.href = '/index';
+                    return;
+                }
+            }
+        }
+
+        // Apply role-based UI tweaks
+        if (authed || (!isPublic && localStorage.getItem('user'))) {
             applyRoleBasedUIChanges();
         }
     }, 100);

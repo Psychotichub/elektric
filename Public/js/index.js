@@ -8,8 +8,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Display welcome message with username
+        // Role guard: managers are not allowed on normal index
         const user = getCurrentUser();
+        if (user && user.role === 'manager') {
+            window.location.href = '/manager-dashboard';
+            return;
+        }
+
+        // Display welcome message with username
         if (user) {
             const welcomeElement = document.getElementById('welcome-message');
             if (welcomeElement) {
