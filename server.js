@@ -2,11 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const { connectToMongo } = require('./src/db/mongo');
 const { connectToMongoose } = require('./src/db/mongoose');
+const logger = require('./src/utils/logger');
 
 // Import routes
 const authRoutes = require('./src/routes/authRoutes');
@@ -51,15 +53,39 @@ app.use(helmet({
     xssFilter: true
 }));
 
-// CORS configuration
+// CORS configuration (tighten origins; allow manager dashboard from same host)
+const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+    : (process.env.NODE_ENV === 'production'
+        ? ['https://yourdomain.com']
+        : ['http://localhost:3000', 'http://127.0.0.1:3000']);
+
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://yourdomain.com'] 
-        : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: function(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Site', 'X-Company']
 }));
+
+// Basic rate limiting
+const baseLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false
+});
+app.use(baseLimiter);
+
+// Tighter limits for auth endpoints
+const authLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'Public')));
@@ -110,8 +136,8 @@ app.get('/index', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'Public', 'html', 'index.html'));
 });
 
-// Authentication routes
-app.use('/api/auth', authRoutes);
+// Authentication routes (with stricter rate limit)
+app.use('/api/auth', authLimiter, authRoutes);
 
 // ===== SETTINGS ROUTES =====
 // These routes provide company and site details for users and admins
@@ -142,10 +168,16 @@ app.use('/api/admin', adminSiteRoutes);
 // app.use('/received', authenticate, receivedRoutes);
 // app.use('/total-price', authenticate, authorize('admin'), totalPriceRoutes);
 
-app.use((err, _, res, next) => {
-    console.error('Error:', err.message);
-    res.status(500).json({ message: 'Internal Server Error', error: err.message });
-    next();
+// Central error handler with safer messages
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+    const status = err.statusCode || 500;
+    const isProd = process.env.NODE_ENV === 'production';
+    logger.error({ err, status, path: req.path, method: req.method }, 'Request error');
+    res.status(status).json({
+        message: status === 500 ? 'Internal Server Error' : err.message || 'Request failed',
+        ...(isProd ? {} : { error: err.message, stack: err.stack })
+    });
 });
 
 
@@ -153,7 +185,7 @@ app.use((err, _, res, next) => {
     try {
         // Connect to MongoDB
         await connectToMongo();
-        console.log('✅ Connected to MongoDB');
+            logger.info('Connected to MongoDB');
 
         await connectToMongoose();
 
@@ -166,10 +198,10 @@ app.use((err, _, res, next) => {
         }
 
         app.listen(port, () => {
-            console.log(`🚀 Server running on http://localhost:${port}`);
+            logger.info({ port }, 'Server running');
         });
     } catch (error) {
-        console.error('❌ Failed to connect to the databases:', error);
+        logger.error({ err: error }, 'Failed to connect to the databases');
         process.exit(1);
     }
 })();

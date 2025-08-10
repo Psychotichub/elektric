@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     // Hide results (charts + table) until user calculates
     setResultsVisible(false);
+    // Announce dynamic messages to screen readers
+    ensureAriaLiveRegion();
 });
 
 // Setup event listeners
@@ -166,8 +168,28 @@ function setupEventListeners() {
         if (statCard) {
             statCard.style.cursor = 'pointer';
             statCard.title = 'View all materials and prices';
+            statCard.setAttribute('role', 'button');
+            statCard.setAttribute('tabindex', '0');
             statCard.addEventListener('click', openMaterialsWindow);
+            statCard.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    openMaterialsWindow();
+                }
+            });
         }
+    }
+}
+
+function ensureAriaLiveRegion() {
+    let live = document.getElementById('ariaLive');
+    if (!live) {
+        live = document.createElement('div');
+        live.id = 'ariaLive';
+        live.setAttribute('aria-live', 'polite');
+        live.setAttribute('aria-atomic', 'true');
+        live.className = 'sr-only';
+        document.body.appendChild(live);
     }
 }
 
@@ -1016,26 +1038,29 @@ function showLoading(show) {
 
 // Show message to user
 function showMessage(message, type = 'info') {
-    // Remove existing messages
-    const existingMessages = document.querySelectorAll('.message');
-    existingMessages.forEach(msg => msg.remove());
+    // Prefer toasts for non-blocking feedback
+    if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+    } else {
+        // Fallback inline message
+        const existingMessages = document.querySelectorAll('.message');
+        existingMessages.forEach(msg => msg.remove());
 
-    // Create new message
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${type}`;
-    messageDiv.textContent = message;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = message;
 
-    // Insert message at the top of the manager/admin panel
-    const container = document.querySelector('.admin-panel') || document.querySelector('.manager-panel');
-    if (container) {
-        container.insertBefore(messageDiv, container.firstChild);
+        const container = document.querySelector('.admin-panel') || document.querySelector('.manager-panel');
+        if (container) {
+            container.insertBefore(messageDiv, container.firstChild);
+            setTimeout(() => { if (messageDiv.parentNode) messageDiv.remove(); }, 10000);
+        }
+    }
 
-        // Auto-remove message after 10 seconds
-        setTimeout(() => {
-            if (messageDiv.parentNode) {
-                messageDiv.remove();
-            }
-        }, 10000);
+    // Announce to screen readers
+    const live = document.getElementById('ariaLive');
+    if (live) {
+        live.textContent = message;
     }
 }
 

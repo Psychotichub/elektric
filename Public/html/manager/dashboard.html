@@ -11,9 +11,10 @@
     <script src="/js/vendor/chart.umd.min.js"></script>
 </head>
 <body>
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
     <div class="manager-dashboard">
         <!-- Header -->
-        <header class="manager-header">
+        <header class="manager-header" role="banner">
             <div class="manager-header-content">
                 <h1><i class="fas fa-chart-line"></i> Manager Dashboard</h1>
                 <div class="manager-user-info">
@@ -35,7 +36,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="manager-panel">
+        <main class="manager-panel" id="mainContent" role="main">
             <!-- Selection Controls -->
             <div class="manager-controls">
                 <div class="manager-control-group">
@@ -142,11 +143,11 @@
                     <table id="totalPriceTable" class="manager-table">
                         <thead>
                             <tr>
-                                <th>Material</th>
-                                <th>Total Quantity</th>
-                                <th>Material Cost</th>
-                                <th>Labor Cost</th>
-                                <th>Total Price</th>
+                                <th scope="col">Material</th>
+                                <th scope="col">Total Quantity</th>
+                                <th scope="col">Material Cost</th>
+                                <th scope="col">Labor Cost</th>
+                                <th scope="col">Total Price</th>
                             </tr>
                         </thead>
                         <tbody id="totalPriceTableBody">
@@ -177,13 +178,13 @@
                     <table id="activityLogsTable" class="manager-table">
                         <thead>
                             <tr>
-                                <th>Time</th>
-                                <th>User</th>
-                                <th>Role</th>
-                                <th>Action</th>
-                                <th>Resource</th>
-                                <th>Material</th>
-                                <th>Quantity</th>
+                                <th scope="col">Time</th>
+                                <th scope="col">User</th>
+                                <th scope="col">Role</th>
+                                <th scope="col">Action</th>
+                                <th scope="col">Resource</th>
+                                <th scope="col">Material</th>
+                                <th scope="col">Quantity</th>
                             </tr>
                         </thead>
                         <tbody id="activityLogsTableBody">
@@ -226,6 +227,7 @@
         </div>
     </div>
 
+    <script src="/js/utils/toast.js"></script>
     <script src="/js/manager/site-totalprice.js"></script>
 </body>
 </html> 

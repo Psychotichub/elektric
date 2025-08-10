@@ -7,30 +7,42 @@ How to use:
 
  Result: Checkbox that stores token in sessionStorage by default; localStorage only if checked; no redirect loops.
 
-S6 — Global auth handling (auto 401 redirect + logout everywhere)
-- Files: Public/js/auth-utils.js, Public/js/security-utils.js
-- Result: Fetch wrapper that redirects to /login on 401; unified logout clears all storage + server session.
+S11 — PWA + Offline caching (installable app)
+- Files: Public/html/*, Public/js/*.js, Public/js/utils/*, new Public/manifest.webmanifest, new Public/js/service-worker.js, server.js static headers
+- Result: App is installable (Add to Home Screen); key routes and assets cached offline (login excluded); background sync queues failed POSTs for retry.
 
-S7 — Scheduled report export (weekly email)
-- Files: server.js, src/routes/managerRoutes.js, new scheduler (node-cron), backend mailer
-- Result: Weekly Excel export for chosen site/company/date range emailed to configured recipients.
+S12 — Accessibility pass (WCAG + keyboard nav)
+- Files: Public/html/*, Public/css/*
+- Result: Proper ARIA labels/roles, logical tab order, visible focus states, skip-to-content, contrast fixes, basic axe tests.
 
-S8 — Bulk import (Excel template)
-- Files: Public/html/manager-dashboard.html (modal), Public/js/manager-site-totalprice.js, backend upload route
-- Result: Upload .xlsx using a template; validate rows; show per-row errors; preview before import.
+S13 — Security hardening (rate-limit + headers)
+- Files: server.js, src/middleware/* (new rateLimiter), src/routes/authRoutes.js
+- Result: Helmet strict config, CORS tightening, express-rate-limit for auth/data endpoints, brute force protection, safer error messages.
 
-S9 — Audit trail (create/update/delete with user + timestamp)
-- Files: src/models/*, src/controllers/*, DB schema changes
-- Result: Each change recorded with actor, action, timestamp; simple view on Manager Dashboard.
+S14 — Centralized logging & monitoring
+- Files: server.js, src/middleware/audit.js, new src/utils/logger.js
+- Result: Structured logs (winston/pino), request/response correlation IDs, error tracking hook (optional Sentry), production log rotation.
 
-S10 — Tests + CI pipeline
-- Files: package.json scripts, tests/*, GitHub Actions
-- Result: Unit + integration + basic E2E for login→dashboard→export; CI runs lint/test on PRs.
+S15 — Saved presets for reports
+- Files: Public/html/manager/dashboard.html (UI), Public/js/manager/site-totalprice.js, src/routes/managerRoutes.js
+- Result: Save/load named filter presets per user; quick switch between frequent site/company/date ranges.
+
+S16 — Dockerized dev/prod setup
+- Files: Dockerfile, docker-compose.yml, README.md, .env.example
+- Result: One-command local spin-up (app + Mongo), reproducible prod images, documented env vars and healthchecks.
+
+S17 — Internationalization (i18n)
+- Files: Public/js/utils/i18n.js, string extraction in Public/html/* & Public/js/*, language JSON files
+- Result: Language switcher with at least EN + one additional language; strings externalized and switch persists.
 
 Optional quick wins
 - QW1: Keyboard shortcuts help tooltip on dashboard
 - QW2: Dark mode toggle
 - QW3: Role badges and avatar on header
+- QW4: Toast notifications (non-blocking, auto-dismiss)
+- QW5: Loading states on critical buttons (disable + spinner)
+- QW6: Copy-to-clipboard on table cells/rows (material names, totals)
+- QW7: Remember last used site/company/date on dashboard load
 
 Tell me which Step ID to start with.
 

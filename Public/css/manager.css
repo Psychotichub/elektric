@@ -521,6 +521,37 @@ body .container {
     outline-offset: 2px;
 }
 
+/* Skip to content link */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+.skip-link:focus {
+    left: 12px;
+    top: 12px;
+    width: auto;
+    height: auto;
+    background: #111827;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    z-index: 2000;
+}
+
+/* Visible focus ring for interactive elements inside dashboard */
+.manager-panel a:focus-visible,
+.manager-panel button:focus-visible,
+.manager-panel select:focus-visible,
+.manager-panel input:focus-visible,
+.manager-panel [tabindex]:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 2px;
+}
+
 .manager-btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -1034,6 +1065,19 @@ kbd {
     box-shadow: 0 1px 0 rgba(0,0,0,0.05);
 }
 
+/* Screen-reader only utility */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
 /* Dark theme overrides for Manager Dashboard */
 body.theme-dark .manager-dashboard {
     background: #0b1220;
@@ -1192,4 +1236,52 @@ body.theme-dark .role-badge {
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.25);
     color: #e5e7eb;
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1500;
+}
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    max-width: 440px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: #111827;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    animation: toast-in 200ms ease-out;
+}
+.toast .toast-text { flex: 1; }
+.toast .toast-close {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+}
+.toast.info { border-left: 4px solid #3b82f6; }
+.toast.success { border-left: 4px solid #16a34a; }
+.toast.error { border-left: 4px solid #dc2626; }
+
+@keyframes toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.toast-hide { animation: toast-out 180ms ease-in forwards; }
+@keyframes toast-out { to { transform: translateY(8px); opacity: 0; } }
+
+/* Dark theme toasts */
+body.theme-dark .toast {
+    background: #0f172a;
+    color: #e5e7eb;
+    border-color: #1f2937;
 }
