@@ -1,8 +1,4 @@
 
-//(function(){
-//  const __console = (typeof window !== 'undefined' && window.console) ? window.console : { log: function(){} };
-//  const console = Object.assign({}, __console, { log: function(){} });
-
 // Global variables
 let currentUser = null;
 let availableSites = [];
@@ -14,6 +10,9 @@ let charts = { costBreakdown: null, totalsOverTime: null };
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
+    // Theme initialization
+    applyStoredThemePreference();
+    initThemeToggleButton();
     checkAuthentication();
     loadAvailableSites();
     setDefaultDates();
@@ -143,6 +142,21 @@ function setupEventListeners() {
             //console.log('⌨️ Keyboard shortcut: Ctrl+R - Clearing results');
             clearResults();
         }
+
+        // Shift + / (question mark) toggles shortcuts overlay
+        if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            toggleShortcutsOverlay();
+        }
+
+        // Escape closes shortcuts overlay
+        if (e.key === 'Escape') {
+            const overlay = document.getElementById('shortcutsOverlay');
+            if (overlay && overlay.classList.contains('open')) {
+                e.preventDefault();
+                closeShortcutsOverlay();
+            }
+        }
     });
 
     // Click on Total Materials card opens materials window
@@ -156,6 +170,102 @@ function setupEventListeners() {
         }
     }
 }
+
+// ===== Theme toggle (Dark/Light) =====
+function getStoredTheme() {
+    try {
+        return localStorage.getItem('theme') || '';
+    } catch (_) {
+        return '';
+    }
+}
+
+function applyTheme(theme) {
+    const isDark = theme === 'dark';
+    const body = document.body;
+    if (isDark) {
+        body.classList.add('theme-dark');
+    } else {
+        body.classList.remove('theme-dark');
+    }
+    updateThemeToggleUI();
+}
+
+function applyStoredThemePreference() {
+    const stored = getStoredTheme();
+    applyTheme(stored === 'dark' ? 'dark' : 'light');
+}
+
+function updateThemeToggleUI() {
+    const btn = document.getElementById('themeToggleBtn');
+    const icon = document.getElementById('themeToggleIcon');
+    const isDark = document.body.classList.contains('theme-dark');
+    if (btn) btn.setAttribute('aria-pressed', String(isDark));
+    if (icon) {
+        icon.classList.remove('fa-moon', 'fa-sun');
+        icon.classList.add(isDark ? 'fa-sun' : 'fa-moon');
+    }
+}
+
+function toggleTheme() {
+    const isDark = document.body.classList.contains('theme-dark');
+    const next = isDark ? 'light' : 'dark';
+    applyTheme(next);
+    try {
+        if (next === 'dark') {
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.removeItem('theme');
+        }
+    } catch (_) { /* ignore */ }
+}
+
+function initThemeToggleButton() {
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+        btn.addEventListener('click', toggleTheme);
+    }
+    updateThemeToggleUI();
+}
+
+// Shortcuts overlay controls
+function openShortcutsOverlay() {
+    const overlay = document.getElementById('shortcutsOverlay');
+    if (!overlay) return;
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeShortcutsOverlay() {
+    const overlay = document.getElementById('shortcutsOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+}
+
+function toggleShortcutsOverlay() {
+    const overlay = document.getElementById('shortcutsOverlay');
+    if (!overlay) return;
+    if (overlay.classList.contains('open')) {
+        closeShortcutsOverlay();
+    } else {
+        openShortcutsOverlay();
+    }
+}
+
+// Wire overlay buttons and backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('shortcutsBtn');
+    const closeBtn = document.getElementById('shortcutsCloseBtn');
+    const overlay = document.getElementById('shortcutsOverlay');
+    if (btn) btn.addEventListener('click', openShortcutsOverlay);
+    if (closeBtn) closeBtn.addEventListener('click', closeShortcutsOverlay);
+    if (overlay) {
+        overlay.addEventListener('click', function(ev) {
+            if (ev.target === overlay) closeShortcutsOverlay();
+        });
+    }
+});
 
 // Show or hide results sections (charts + table)
 function setResultsVisible(visible) {
@@ -197,7 +307,23 @@ function checkAuthentication() {
             return;
         }
 
-        document.getElementById('currentUser').textContent = `Welcome, ${currentUser.username} (Manager)`;
+        const currentUserEl = document.getElementById('currentUser');
+        if (currentUserEl) {
+            const initials = (currentUser.username || '?')
+                .split(/\s+/)
+                .map(s => s.charAt(0))
+                .join('')
+                .slice(0, 2)
+                .toUpperCase();
+            const role = currentUser.role || 'user';
+            currentUserEl.innerHTML = `
+                <span class="user-chip">
+                    <span class="user-avatar" aria-hidden="true">${initials}</span>
+                    <span class="user-name">${currentUser.username}</span>
+                    <span class="role-badge ${role}">${role}</span>
+                </span>
+            `;
+        }
     } catch (error) {
         window.location.href = '/manager-login';
     }
@@ -489,9 +615,11 @@ async function fetchTotalPrices() {
                 showMessage('No records found for the selected criteria.', 'info');
                 // Still refresh activity logs
                 await loadActivityLogs(selectedSite, selectedCompany);
+                // Update stats area with selected site name even if no data
+                updateCalculatedStatistics(data.summary, data.site || selectedSite);
             } else {
                 displayCalculatedTotalPrices();
-                updateCalculatedStatistics(data.summary);
+                updateCalculatedStatistics(data.summary, data.site || selectedSite);
                 updateCharts(totalPriceData, data.summary, { start: startDate.value, end: endDate.value });
                 // Reveal results and enable export
                 setResultsVisible(true);
@@ -560,7 +688,7 @@ function displayCalculatedTotalPrices() {
 }
 
 // Update statistics panel with calculated data
-function updateCalculatedStatistics(summary) {
+function updateCalculatedStatistics(summary, selectedSiteName) {
     
     const totalUsersElement = document.getElementById('totalUsers');
     const totalPricesElement = document.getElementById('totalPrices');
@@ -570,7 +698,7 @@ function updateCalculatedStatistics(summary) {
     if (totalUsersElement) totalUsersElement.textContent = summary?.totalMaterials || 0;
     if (totalPricesElement) totalPricesElement.textContent = totalPriceData.length;
     if (totalAmountElement) totalAmountElement.textContent = `€${formatNumber(summary?.grandTotal || 0)}`;
-    if (selectedSiteElement) selectedSiteElement.textContent = 'Calculated';
+    if (selectedSiteElement) selectedSiteElement.textContent = selectedSiteName || '-';
     
 
 }

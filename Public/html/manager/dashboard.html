@@ -21,6 +21,12 @@
                     <button id="headerCreateUserBtn" class="manager-header-btn" title="Create a new user or admin">
                         <i class="fas fa-user-plus"></i> Create User
                     </button>
+                    <button id="themeToggleBtn" class="manager-header-btn" aria-pressed="false" title="Toggle dark mode">
+                        <i id="themeToggleIcon" class="fas fa-moon"></i>
+                    </button>
+                    <button id="shortcutsBtn" class="manager-header-btn" title="Keyboard shortcuts (Shift+/)">
+                        <i class="fas fa-question-circle"></i> Shortcuts
+                    </button>
                     <button id="logoutBtn" class="manager-logout-btn">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
@@ -197,6 +203,27 @@
     <div id="loadingSpinner" class="manager-loading">
         <div class="manager-spinner"></div>
         <p>Calculating total prices...</p>
+    </div>
+
+    <!-- Shortcuts Overlay -->
+    <div id="shortcutsOverlay" class="shortcuts-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+        <div class="shortcuts-modal">
+            <div class="shortcuts-header">
+                <h2 id="shortcutsTitle" class="shortcuts-title"><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h2>
+                <button id="shortcutsCloseBtn" class="shortcuts-close-btn" aria-label="Close shortcuts">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="shortcuts-body">
+                <ul class="shortcuts-list">
+                    <li><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> — Calculate Total Prices</li>
+                    <li><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>E</kbd> — Export to Excel</li>
+                    <li><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>R</kbd> — Clear Results</li>
+                    <li><kbd>Shift</kbd> + <kbd>/</kbd> (<kbd>?</kbd>) — Toggle this help</li>
+                    <li>Click "Total Materials" card — Open materials list</li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <script src="/js/manager/site-totalprice.js"></script>

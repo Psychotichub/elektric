@@ -312,6 +312,55 @@ body .container {
     gap: 15px;
 }
 
+/* User chip (avatar + name + role badge) */
+.manager-user-info #currentUser {
+    display: flex;
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #4f46e5;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+}
+
+.user-name {
+    font-weight: 700;
+}
+
+.role-badge {
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: capitalize;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.role-badge.admin { background: #f59e0b; color: #111827; border-color: transparent; }
+.role-badge.manager { background: #10b981; color: #052e16; border-color: transparent; }
+.role-badge.user { background: #60a5fa; color: #0c4a6e; border-color: transparent; }
+
 .manager-header-btn {
     background: rgba(255, 255, 255, 0.2);
     color: white;
@@ -903,3 +952,244 @@ body.manager-materials {
         font-size: 16px; /* Prevents zoom on iOS */
     }
 } 
+
+/* Keyboard Shortcuts Overlay */
+.shortcuts-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+}
+
+.shortcuts-overlay.open {
+    display: flex;
+}
+
+.shortcuts-modal {
+    background: #ffffff;
+    width: min(720px, 92%);
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid #e1e8ed;
+}
+
+.shortcuts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid #eef2f5;
+}
+
+.shortcuts-title {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #2c3e50;
+}
+
+.shortcuts-close-btn {
+    background: transparent;
+    border: none;
+    color: #667eea;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 6px 8px;
+}
+
+.shortcuts-close-btn:hover {
+    background: #f3f4f6;
+}
+
+.shortcuts-body {
+    padding: 16px 18px 20px;
+}
+
+.shortcuts-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    row-gap: 10px;
+}
+
+.shortcuts-list li {
+    color: #2c3e50;
+}
+
+/* KBD key visual styling */
+kbd {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 2px 6px;
+    margin: 0 2px;
+    font: 600 0.85rem/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif;
+    color: #111827;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-bottom-width: 3px;
+    border-radius: 6px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+}
+
+/* Dark theme overrides for Manager Dashboard */
+body.theme-dark .manager-dashboard {
+    background: #0b1220;
+}
+
+body.theme-dark .manager-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1f2937 100%);
+    color: #e5e7eb;
+}
+
+body.theme-dark .manager-header-btn,
+body.theme-dark .manager-logout-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5e7eb;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+body.theme-dark .manager-header-btn:hover,
+body.theme-dark .manager-logout-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+body.theme-dark .manager-controls,
+body.theme-dark .manager-results,
+body.theme-dark .manager-stat-card,
+body.theme-dark .chart-card {
+    background: #0f172a;
+    color: #e5e7eb;
+    border-color: #1f2937;
+}
+
+body.theme-dark .manager-controls label,
+body.theme-dark .manager-results h3,
+body.theme-dark .chart-card h4,
+body.theme-dark .materials-title,
+body.theme-dark .materials-meta {
+    color: #e5e7eb;
+}
+
+body.theme-dark .manager-control-group select,
+body.theme-dark .manager-control-group input {
+    background: #0b1220;
+    color: #e5e7eb;
+    border-color: #1f2937;
+}
+body.theme-dark .manager-control-group select:focus,
+body.theme-dark .manager-control-group input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+body.theme-dark .manager-table thead th {
+    background: #0b1220;
+    color: #e5e7eb;
+}
+body.theme-dark .manager-table th {
+    background: #0b1220;
+    color: #e5e7eb;
+    border-bottom-color: #1f2937;
+}
+body.theme-dark .manager-table td {
+    color: #e5e7eb;
+    border-bottom-color: #1f2937;
+}
+body.theme-dark .manager-table tr:hover {
+    background: #0f172a;
+}
+body.theme-dark .manager-table tbody tr:nth-child(odd) {
+    background: #0c1322;
+}
+body.theme-dark .manager-table .no-data {
+    color: #cbd5e1;
+}
+
+body.theme-dark .table-container {
+    border-color: #1f2937;
+}
+
+body.theme-dark .manager-pagination .manager-page-btn {
+    background: #0f172a;
+    border-color: #1f2937;
+    color: #e5e7eb;
+}
+body.theme-dark .manager-page-info {
+    color: #e5e7eb;
+}
+body.theme-dark .manager-page-size {
+    color: #94a3b8;
+}
+
+body.theme-dark .manager-stat-icon {
+    color: #6366f1;
+}
+body.theme-dark .manager-stat-number {
+    color: #e5e7eb;
+}
+body.theme-dark .manager-stat-label {
+    color: #94a3b8;
+}
+
+/* Loading overlay in dark mode */
+body.theme-dark .manager-loading {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+/* Messages */
+body.theme-dark .manager-message.success {
+    background: #0e3b23;
+    color: #d1fae5;
+    border-color: #14532d;
+}
+body.theme-dark .manager-message.error {
+    background: #3f1d1d;
+    color: #fecaca;
+    border-color: #7f1d1d;
+}
+body.theme-dark .manager-message.info {
+    background: #0b2540;
+    color: #bfdbfe;
+    border-color: #1e3a8a;
+}
+
+/* Shortcuts modal in dark */
+body.theme-dark .shortcuts-modal {
+    background: #0f172a;
+    border-color: #1f2937;
+}
+body.theme-dark .shortcuts-header {
+    border-bottom-color: #1f2937;
+}
+body.theme-dark .shortcuts-title {
+    color: #e5e7eb;
+}
+body.theme-dark .shortcuts-close-btn {
+    color: #a5b4fc;
+}
+body.theme-dark .shortcuts-close-btn:hover {
+    background: #111827;
+}
+body.theme-dark .shortcuts-list li {
+    color: #e5e7eb;
+}
+
+/* kbd in dark */
+body.theme-dark kbd {
+    color: #e5e7eb;
+    background: #111827;
+    border-color: #1f2937;
+}
+
+/* User chip in dark theme */
+body.theme-dark .user-chip {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+body.theme-dark .role-badge {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #e5e7eb;
+}
