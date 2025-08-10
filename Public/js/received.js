@@ -84,9 +84,11 @@ function initReceived() {
                 const dropdownItem = document.createElement('div');
                 dropdownItem.className = 'dropdown-item';
                 dropdownItem.textContent = option.value;
+                // carry unit to dropdown item for keyboard selection path
+                dropdownItem.dataset.unit = option.dataset.unit || '';
                 dropdownItem.addEventListener('click', () => {
                     materialNameInput.value = option.value;
-                    selectedUnit = option.dataset.unit;
+                    selectedUnit = option.dataset.unit || '';
                     dropdown.classList.add('hidden');
                 });
                 dropdown.appendChild(dropdownItem);
@@ -124,8 +126,10 @@ function initReceived() {
                 e.preventDefault();
                 if (selectedDropdownIndex >= 0 && selectedDropdownIndex < dropdownItems.length) {
                     const selectedItem = dropdownItems[selectedDropdownIndex];
-                    materialNameInput.value = selectedItem.textContent;
-                    selectedUnit = selectedItem.dataset.unit || '';
+                    const name = selectedItem.textContent;
+                    materialNameInput.value = name;
+                    // prefer unit from dropdown item, otherwise resolve from datalist
+                    selectedUnit = selectedItem.dataset.unit || (Array.from(materialList.options).find(opt => opt.value === name)?.dataset.unit || '');
                     dropdown.classList.add('hidden');
                     selectedDropdownIndex = -1;
                 }
