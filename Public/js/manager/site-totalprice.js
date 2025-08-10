@@ -497,7 +497,7 @@ async function fetchTotalPrices() {
                 setResultsVisible(true);
                 const exportBtnEl = document.getElementById('exportBtn');
                 if (exportBtnEl) exportBtnEl.disabled = false;
-                showMessage(`Successfully calculated ${totalPriceData.length} total price records for ${data.site || selectedSite}, ${data.company || selectedCompany}. Grand Total: $${formatNumber(data.summary?.grandTotal || 0)}`, 'success');
+                showMessage(`Successfully calculated ${totalPriceData.length} total price records for ${data.site || selectedSite}, ${data.company || selectedCompany}. Grand Total: €${formatNumber(data.summary?.grandTotal || 0)}`, 'success');
                 await loadActivityLogs(selectedSite, selectedCompany);
             }
         } else {
@@ -533,9 +533,9 @@ function displayCalculatedTotalPrices() {
         row.innerHTML = `
             <td>${item.materialName || 'N/A'}</td>
             <td>${item.quantity || 'N/A'} ${item.unit || ''}</td>
-            <td>$${formatNumber(item.materialCost)}</td>
-            <td>$${formatNumber(item.laborCost)}</td>
-            <td>$${formatNumber(item.totalPrice)}</td>
+            <td>€${formatNumber(item.materialCost)}</td>
+            <td>€${formatNumber(item.laborCost)}</td>
+            <td>€${formatNumber(item.totalPrice)}</td>
         `;
         tableBody.appendChild(row);
     });
@@ -550,9 +550,9 @@ function displayCalculatedTotalPrices() {
     totalRow.innerHTML = `
         <td><strong>TOTAL</strong></td>
         <td></td>
-        <td><strong>$${formatNumber(totalMaterialCost)}</strong></td>
-        <td><strong>$${formatNumber(totalLaborCost)}</strong></td>
-        <td><strong>$${formatNumber(grandTotal)}</strong></td>
+        <td><strong>€${formatNumber(totalMaterialCost)}</strong></td>
+        <td><strong>€${formatNumber(totalLaborCost)}</strong></td>
+        <td><strong>€${formatNumber(grandTotal)}</strong></td>
     `;
     tableBody.appendChild(totalRow);
     
@@ -569,7 +569,7 @@ function updateCalculatedStatistics(summary) {
     
     if (totalUsersElement) totalUsersElement.textContent = summary?.totalMaterials || 0;
     if (totalPricesElement) totalPricesElement.textContent = totalPriceData.length;
-    if (totalAmountElement) totalAmountElement.textContent = `$${formatNumber(summary?.grandTotal || 0)}`;
+    if (totalAmountElement) totalAmountElement.textContent = `€${formatNumber(summary?.grandTotal || 0)}`;
     if (selectedSiteElement) selectedSiteElement.textContent = 'Calculated';
     
 
@@ -784,9 +784,9 @@ function exportToExcel() {
         const excelData = totalPriceData.map(item => ({
             'Material': item.materialName || 'N/A',
             'Total Quantity': `${item.quantity || 'N/A'} ${item.unit || ''}`,
-            'Material Cost': `$${formatNumber(item.materialCost)}`,
-            'Labor Cost': `$${formatNumber(item.laborCost)}`,
-            'Total Price': `$${formatNumber(item.totalPrice)}`
+            'Material Cost': `€${formatNumber(item.materialCost)}`,
+            'Labor Cost': `€${formatNumber(item.laborCost)}`,
+            'Total Price': `€${formatNumber(item.totalPrice)}`
         }));
 
         // Add grand total row
@@ -797,9 +797,9 @@ function exportToExcel() {
         excelData.push({
             'Material': 'TOTAL',
             'Total Quantity': '',
-            'Material Cost': `$${formatNumber(totalMaterialCost)}`,
-            'Labor Cost': `$${formatNumber(totalLaborCost)}`,
-            'Total Price': `$${formatNumber(grandTotal)}`,
+            'Material Cost': `€${formatNumber(totalMaterialCost)}`,
+            'Labor Cost': `€${formatNumber(totalLaborCost)}`,
+            'Total Price': `€${formatNumber(grandTotal)}`,
             'Location': ''
         });
 
@@ -843,7 +843,7 @@ function clearResults() {
     
     if (totalUsersElement) totalUsersElement.textContent = '0';
     if (totalPricesElement) totalPricesElement.textContent = '0';
-    if (totalAmountElement) totalAmountElement.textContent = '$0';
+    if (totalAmountElement) totalAmountElement.textContent = '€0';
     if (selectedSiteElement) selectedSiteElement.textContent = '-';
     
     showMessage('Calculated results cleared. Form selections preserved.', 'info');
