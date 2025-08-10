@@ -42,10 +42,6 @@ function initDailyReport() {
 
 //  console.log('Current date:', new Date().toLocaleDateString('en-CA') + ' ' + new Date().toLocaleTimeString());
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-CA');
-    };
     const currentDate = new Date().toLocaleDateString('en-CA').split('T')[0];
     dateInput.value = currentDate;
     filterDateInput.value = currentDate;
@@ -454,25 +450,25 @@ function initDailyReport() {
 
         //styles
         const headerStyle = {
-            font: { bold: true, color: { rgb: "000000" }, sz: 12 },
-            fill: { fgColor: { rgb: "CCCCCC" } },
-            alignment: { horizontal: "center", vertical: "center" },
+            font: { bold: true, color: { rgb: '000000' }, sz: 12 },
+            fill: { fgColor: { rgb: 'CCCCCC' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
             border: {
-                top: { style: "thin" },
-                bottom: { style: "thin" },
-                left: { style: "thin" },
-                right: { style: "thin" }
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' }
             }
         };
 
         const cellStyle = {
-            font: { color: { rgb: "000000" }, sz: 11 },
-            alignment: { horizontal: "left", vertical: "center" },
+            font: { color: { rgb: '000000' }, sz: 11 },
+            alignment: { horizontal: 'left', vertical: 'center' },
             border: {
-                top: { style: "thin" },
-                bottom: { style: "thin" },
-                left: { style: "thin" },
-                right: { style: "thin" }
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' }
             }
         };
 
@@ -525,4 +521,4 @@ function initDailyReport() {
                 printWindow.close();
             }, 500);
     });
-};
+}

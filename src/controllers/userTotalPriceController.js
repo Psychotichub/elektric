@@ -60,7 +60,7 @@ const addTotalPrice = async (req, res) => {
             for (const it of savedMaterials) {
                 await logAction(req, req.user.site, req.user.company, 'create', 'totalPrice', it._id, { materialName: it.materialName, quantity: it.quantity, unit: it.unit, totalPrice: it.totalPrice });
             }
-        } catch (_) {}
+        } catch (_) { void 0; }
         res.status(201).json(savedMaterials);
     } catch (error) {
         console.error('Error saving total prices:', error);
@@ -95,7 +95,7 @@ const updateTotalPrice = async (req, res) => {
         try {
             const { logAction } = require('../middleware/audit');
             await logAction(req, req.user.site, req.user.company, 'update', 'totalPrice', updatedTotalPrice._id, { materialName, quantity, unit: updatedTotalPrice.unit, totalPrice });
-        } catch (_) {}
+        } catch (_) { void 0; }
         res.status(200).json(updatedTotalPrice);
     } catch (error) {
         console.error('Error updating total price:', error);

@@ -29,7 +29,7 @@ async function initMaterialSubmit() {
         const tableHeaders = document.querySelectorAll('#submitted-table th');
         if (tableHeaders.length > 0) {
             // Hide price columns (Material Price, Labor Price, Total Price) and Action column
-            tableHeaders.forEach((header, index) => {
+            tableHeaders.forEach((header) => {
                 const headerText = header.textContent.toLowerCase();
                 if (headerText.includes('price') || headerText.includes('action')) {
                     header.style.display = 'none';
@@ -74,10 +74,10 @@ async function initMaterialSubmit() {
                 updateMaterialList();
                 submittedTable.classList.toggle('hidden', materials.length === 0);
             } else {
-                console.error("Error fetching materials:", materials.message);
+                console.error('Error fetching materials:', materials.message);
             }
         } catch (error) {
-            console.error("Error loading materials:", error);
+            console.error('Error loading materials:', error);
         }
     }
 
@@ -172,7 +172,7 @@ async function initMaterialSubmit() {
                         }
                     }
                 } catch (error) {
-                    console.error("Error submitting material:", error);
+                    console.error('Error submitting material:', error);
                     alert('Failed to submit material. Please try again.');
                 }
             }
@@ -194,7 +194,7 @@ async function initMaterialSubmit() {
         const filteredMaterials = materialsList.filter(material =>
             material.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        filteredMaterials.forEach(material => {
+        filteredMaterials.forEach((material) => {
             const item = document.createElement('li');
             item.textContent = material;
             item.addEventListener('click', () => {
@@ -299,7 +299,7 @@ async function initMaterialSubmit() {
                             }
                         }
                     } catch (error) {
-                        console.error("Error deleting material:", error);
+                        console.error('Error deleting material:', error);
                         alert('Failed to delete material. Please try again.');
                     }
                 }

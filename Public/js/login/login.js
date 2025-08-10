@@ -12,22 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     //console.log('Login page loaded, checking authentication status...');
     // Add a small delay to ensure auth-utils is loaded
     setTimeout(() => {
-        // Check if user is already logged in
-        // Try to get auth status either from token or via auth-utils.js if loaded
-        let isAuthed = false;
-        
-        if (typeof isAuthenticated === 'function') {
-            // Use the auth-utils function if available
-            isAuthed = isAuthenticated();
-            //console.log('Using auth-utils for authentication check:', isAuthed);
-        } else {
-            // Fallback to basic token check
-            const token = localStorage.getItem('token');
-            isAuthed = !!token;
-            //console.log('Basic token check:', isAuthed);
-        }
-        
-        if (isAuthed) {
+        // Only redirect when the proper auth check is available and confirms auth
+        if (typeof isAuthenticated === 'function' && isAuthenticated()) {
             redirectBasedOnRole();
         }
     }, 150);
@@ -228,4 +214,6 @@ function hasRequiredRole(requiredRole) {
         console.error('Error checking user role:', error);
         return false;
     }
-} 
+}
+// Mark as used without changing behavior
+void hasRequiredRole;

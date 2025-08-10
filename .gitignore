@@ -151,6 +151,22 @@ coverage/
 *.tgz
 *.tar.gz
 
+# Additional environment files
+.env.development
+.env.production
+
+# Package manager lockfiles (ignored in this repo)
+pnpm-lock.yaml
+.pnp.*
+
+# Hosting/platform directories
+.vercel/
+.netlify/
+
+# Jest caches
+.jest/
+.jest-cache/
+
 # Script files with sensitive data
 create-test-user.js
 create-user-in-server-db.js
@@ -158,3 +174,19 @@ create-user-in-server-db.js
 # Validation and security files
 Public/validation-key.txt
 validation-key.txt
+
+# Public assets that might leak secrets if accidentally added later
+Public/**/*.pem
+Public/**/*.key
+Public/**/*.crt
+Public/**/*.pfx
+Public/**/.env
+Public/**/secrets.*
+Public/**/config.local.*
+
+# Local debug dumps
+dump*.json
+*.dump.json
+
+# Test env artifacts
+tests/.env*

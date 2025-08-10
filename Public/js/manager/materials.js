@@ -9,9 +9,9 @@
 
     // Try to read token from opener if available
     let token = null;
-    try { token = window.opener && window.opener.getToken ? window.opener.getToken() : null; } catch(_){ }
+    try { token = window.opener && window.opener.getToken ? window.opener.getToken() : null; } catch(_){ void 0; }
     if (!token) {
-      try { token = localStorage.getItem('token') || sessionStorage.getItem('token'); } catch(_){ }
+      try { token = localStorage.getItem('token') || sessionStorage.getItem('token'); } catch(_){ void 0; }
     }
 
     const resp = await fetch(`/api/manager/site/materials?site=${encodeURIComponent(site)}&company=${encodeURIComponent(company)}`, {

@@ -1,0 +1,49 @@
+{
+  "root": true,
+  "env": {
+    "es2021": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "script"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": "off",
+    "semi": ["error", "always"],
+    "quotes": ["error", "single", { "avoidEscape": true, "allowTemplateLiterals": true }]
+  },
+  "overrides": [
+    {
+      "files": ["server.js", "src/**/*.js"],
+      "env": { "node": true, "browser": false }
+    },
+    {
+      "files": ["Public/**/*.js"],
+      "env": { "browser": true, "node": false },
+      "rules": {
+        "no-undef": "off"
+      },
+      "globals": {
+        "Chart": "readonly",
+        "XLSX": "readonly"
+      }
+    },
+    {
+      "files": ["tests/**/*.test.js", "tests/**/*.js"],
+      "env": { "node": true },
+      "globals": {
+        "describe": "readonly",
+        "it": "readonly",
+        "test": "readonly",
+        "expect": "readonly",
+        "beforeAll": "readonly",
+        "afterAll": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly"
+      }
+    }
+  ]
+}
+

@@ -15,8 +15,7 @@ const userAllRoutes = require('./src/routes/userAllRoutes');
 const adminSiteRoutes = require('./src/routes/adminSiteRoutes');
 const managerRoutes = require('./src/routes/managerRoutes');
 
-// Import middleware
-const { authenticate } = require('./src/middleware/auth');
+// Import middleware (none directly used here)
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -27,28 +26,28 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             baseUri: ["'self'"],
-            fontSrc: ["'self'", "https:", "data:"],
+            fontSrc: ["'self'", 'https:', 'data:'],
             formAction: ["'self'"],
             frameAncestors: ["'self'"],
-            imgSrc: ["'self'", "data:"],
+            imgSrc: ["'self'", 'data:'],
             objectSrc: ["'none'"],
             scriptSrc: ["'self'"],
             scriptSrcAttr: ["'none'"],
-            styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+            styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
             upgradeInsecureRequests: []
         }
     },
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "same-origin" },
-    crossOriginOpenerPolicy: { policy: "same-origin" },
+    crossOriginResourcePolicy: { policy: 'same-origin' },
+    crossOriginOpenerPolicy: { policy: 'same-origin' },
     dnsPrefetchControl: { allow: false },
-    frameguard: { action: "deny" },
+    frameguard: { action: 'deny' },
     hidePoweredBy: true,
     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
     ieNoOpen: true,
     noSniff: true,
-    permittedCrossDomainPolicies: { permittedPolicies: "none" },
-    referrerPolicy: { policy: "no-referrer" },
+    permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+    referrerPolicy: { policy: 'no-referrer' },
     xssFilter: true
 }));
 
@@ -161,6 +160,7 @@ app.use((err, _, res, next) => {
         // Verify database connection is working
         const mongoose = require('mongoose');
         if (mongoose.connection.readyState === 1) {
+            void 0;
         } else {
             throw new Error('Database connection not ready');
         }

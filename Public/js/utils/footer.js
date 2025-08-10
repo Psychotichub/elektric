@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener('DOMContentLoaded', function() {
     fetch('/html/footer.html')
         .then(response => response.text())
         .then(data => {

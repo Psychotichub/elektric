@@ -4,9 +4,7 @@ const User = require('../models/user');
 // Get all users from all sites in the database
 const getSiteUsers = async (req, res) => {
     try {
-        
-        const { site, company } = req.user;
-        
+        // Using main database for user listing; site/company from req.user not needed here
         // Get all users from the main database
         const users = await User.find({}).select('-password');
         

@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
-const COOKIE_MAX_AGE_DAYS = parseInt(process.env.COOKIE_MAX_AGE_DAYS || '30', 10);
+// COOKIE_MAX_AGE_DAYS is resolved where used
 
 
 // Register a new user
@@ -113,7 +113,6 @@ exports.login = async (req, res) => {
   try {
     const { username, password, site, company } = req.body;
 
-    console.log('🔍 Login attempt:', { username, site, company });
 
     // Check database connection
     if (!User.db || User.db.readyState !== 1) {
@@ -125,20 +124,14 @@ exports.login = async (req, res) => {
     }
 
     // First, try to find user by username only
-    console.log('🔍 Searching for user by username only:', { username });
     let user = await User.findOne({ 
       username: { $regex: new RegExp(`^${username}$`, 'i') }
     });
 
-    console.log('🔍 Initial user search result:', user ? {
-      username: user.username,
-      role: user.role,
-      site: user.site,
-      company: user.company
-    } : 'No user found');
 
     // If user found and is a manager, allow login without site/company
     if (user && user.role === 'manager') {
+      void 0;
     } else {
       // For admins/users, require exact site and company (case-insensitive, full match)
       const inputSite = String(site || '').trim();
@@ -151,7 +144,6 @@ exports.login = async (req, res) => {
       }
 
       if (!user) {
-        console.log('❌ No user found for username during admin/user login');
         return res.status(400).json({ success: false, message: 'Invalid credentials' });
       }
 
@@ -165,13 +157,7 @@ exports.login = async (req, res) => {
     }
 
     if (user) {
-      console.log('✅ User details:', {
-        id: user._id,
-        username: user.username,
-        site: user.site,
-        company: user.company,
-        role: user.role
-      });
+      void 0;
     }
     
     if (!user) {

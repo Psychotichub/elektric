@@ -95,17 +95,15 @@ async function checkCookieAuth() {
         if (!resp.ok) return false;
         const data = await resp.json();
         if (data && data.user) {
-            try { localStorage.setItem('user', JSON.stringify(data.user)); } catch (_) {}
+            try { localStorage.setItem('user', JSON.stringify(data.user)); } catch (_) { /* no-op */ }
             // If server returns a token, persist it to avoid loops
             if (data.token) {
-                try { localStorage.setItem('token', data.token); } catch (_) {}
+                try { localStorage.setItem('token', data.token); } catch (_) { /* no-op */ }
             }
             return true;
         }
         return false;
-    } catch (_) {
-        return false;
-    }
+    } catch (_) { return false; }
 }
 
 // Function to check if current user has admin role
@@ -125,6 +123,8 @@ function hasRequiredRole(requiredRole) {
     
     return true; // Regular user role is sufficient
 }
+// Mark as used for linter without changing behavior
+void hasRequiredRole;
 
 // Function to check authorization for specific actions
 function canPerformAction(action) {
@@ -145,21 +145,26 @@ function canPerformAction(action) {
             return true;
     }
 }
+// Mark as used
+void canPerformAction;
 
-// Function to logout user
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    
-    // Also try to clear HTTP-only cookie by making a fetch request
-    fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include' // Include cookies
-    }).catch(error => {
+// Function to logout user (clears all storage and ends server session)
+async function logout(redirectTo) {
+    try {
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+    } catch (error) {
         console.error('Error logging out:', error);
-    });
-    
-    window.location.href = '/login';
+    }
+
+    // Clear all client-side storage
+    try { localStorage.clear(); } catch (_) { /* ignore */ }
+    try { sessionStorage.clear(); } catch (_) { /* ignore */ }
+
+    // Redirect (default to user login)
+    window.location.href = redirectTo || '/login';
 }
 
 // Function to add authorization header to fetch requests
@@ -169,6 +174,8 @@ function authHeader() {
     //console.log('Auth headers:', token ? 'Authorization header added' : 'No authorization header');
     return headers;
 }
+// Mark as used
+void authHeader;
 
 // Function to store token with cross-browser compatibility in mind
 function storeAuthData(token, user, remember = false) {
@@ -202,6 +209,8 @@ function storeAuthData(token, user, remember = false) {
         return false;
     }
 }
+// Mark as used
+void storeAuthData;
 
 // Function to make authenticated API requests
 async function authenticatedFetch(url, options = {}) {
@@ -251,7 +260,7 @@ async function authenticatedFetch(url, options = {}) {
         
         // Handle authentication errors
         if (response.status === 401) {
-            console.error("Authentication error: Unauthorized access");
+            console.error('Authentication error: Unauthorized access');
             
             // Try to refresh token first before logging out
             const refreshed = await tryRefreshToken();
@@ -278,6 +287,8 @@ async function authenticatedFetch(url, options = {}) {
         throw error;
     }
 }
+// Mark as used
+void authenticatedFetch;
 
 // Function to refresh token
 async function tryRefreshToken() {
@@ -323,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //console.log("Current page:", currentPage);
     
     // Pages that don't require authentication
-    const publicPages = ['/login', '/html/login.html'];
+    const publicPages = ['/login', '/html/login.html', '/manager-login'];
     
     // Add a small delay to ensure all scripts are loaded
     setTimeout(async () => {

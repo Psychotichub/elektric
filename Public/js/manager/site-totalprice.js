@@ -93,8 +93,9 @@ function setupEventListeners() {
     // Table sorting
     if (table) {
         const headers = Array.from(table.querySelectorAll('thead th'));
-        headers.forEach((th, index) => {
+        headers.forEach((th) => {
             th.addEventListener('click', () => {
+                const index = Array.from(th.parentNode.children).indexOf(th);
                 const key = getSortKeyByColumnIndex(index);
                 if (!key) return;
                 if (tableSort.key === key) {
@@ -114,10 +115,9 @@ function setupEventListeners() {
     if (nextPageBtn) nextPageBtn.addEventListener('click', () => changePage(1));
 
     // Add date change listeners
-    [startDate, endDate].forEach((input, index) => {
+    [startDate, endDate].forEach((input) => {
         if (input) {
-            input.addEventListener('change', function() {
-            });
+            input.addEventListener('change', function() { /* intentionally empty */ });
         }
     });
 
@@ -213,8 +213,7 @@ async function loadAvailableSites() {
         if (token) {
             try {
                 payload = JSON.parse(atob(token.split('.')[1]));
-            } catch (error) {
-            }
+            } catch (error) { /* no-op */ }
         }
 
     // Admins can query site users; managers try their own site/company from token or fallback to users they created
@@ -358,7 +357,7 @@ function populateCompanySelect() {
 }
 
 // Update company options based on selected site
-function updateCompanyOptions(selectedSite) {
+function updateCompanyOptions(_selectedSite) {
     const companySelect = document.getElementById('companySelect');
     if (!companySelect) {
         return;
@@ -368,10 +367,7 @@ function updateCompanyOptions(selectedSite) {
     const currentCompany = companySelect.value;
     
     // Filter companies based on selected site
-    const filteredCompanies = availableCompanies.filter(company => {
-        // For now, show all companies. You can implement site-specific filtering later
-        return true;
-    });
+    const filteredCompanies = availableCompanies.slice();
     
     companySelect.innerHTML = '<option value="">Select a company...</option>';
     
@@ -530,9 +526,9 @@ function displayCalculatedTotalPrices() {
     tableBody.innerHTML = '';
     
     // Render with sorting and pagination
-    const { sorted, totalPages, page, pageSize } = getSortedAndPagedData();
+        const { sorted, totalPages, page } = getSortedAndPagedData();
     
-    sorted.forEach((item, index) => {
+    sorted.forEach((item) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${item.materialName || 'N/A'}</td>
@@ -616,7 +612,7 @@ async function loadActivityLogs(site, company) {
                 <td>${qtyVal}${unitVal ? ` ${unitVal}` : ''}</td>
             </tr>`;
         }).join('');
-    } catch (_) {}
+    } catch (_) { /* no-op */ }
 }
 
 // Open a new window listing all materials (name, unit, prices) for the selected site/company
@@ -891,11 +887,11 @@ function showMessage(message, type = 'info') {
 }
 
 // Logout function
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('managerAccess');
-    localStorage.removeItem('managerSite');
-    localStorage.removeItem('managerCompany');
+async function logout() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (_) { /* ignore */ }
+    try { localStorage.clear(); } catch (_) { /* ignore */ }
+    try { sessionStorage.clear(); } catch (_) { /* ignore */ }
     window.location.href = '/manager-login';
 }

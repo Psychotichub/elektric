@@ -60,7 +60,7 @@ const addDailyReport = async (req, res) => {
             for (const r of newDailyReports) {
                 await logAction(req, req.user.site, req.user.company, 'create', 'dailyReport', r._id, { materialName: r.materialName, quantity: r.quantity, unit: r.unit });
             }
-        } catch (_) {}
+        } catch (_) { void 0; }
         res.status(201).json(newDailyReports);
     } catch (error) {
         console.error('Error adding daily reports:', error);
@@ -111,7 +111,7 @@ const updateDailyReport = async (req, res) => {
         try {
             const { logAction } = require('../middleware/audit');
             await logAction(req, req.user.site, req.user.company, 'update', 'dailyReport', updatedDailyReport._id, { materialName, quantity, unit: updatedDailyReport.unit });
-        } catch (_) {}
+        } catch (_) { void 0; }
         res.status(200).json(updatedDailyReport);
     } catch (error) {
         console.error('Error updating daily report:', error);

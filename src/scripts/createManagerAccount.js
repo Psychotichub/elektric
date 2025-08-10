@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 // Force .env values to override OS environment variables (e.g., Windows USERNAME)
 require('dotenv').config({ override: true });
 
@@ -9,7 +8,7 @@ const User = require('../models/user');
 // Connect to MongoDB
 async function connectToDatabase() {
     try {
-        const uri = process.env.MONGOOSE_URI || 'mongodb://localhost:27017/daily_report_system';
+        const uri = process.env.MONGOOSE_URI;
         await mongoose.connect(uri);
         console.log('✅ Connected to MongoDB');
     } catch (error) {

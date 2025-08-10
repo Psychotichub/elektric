@@ -26,6 +26,8 @@ async function initTotalPrice() {
     const showElement = (element) => element.classList.remove('hidden');
     const hideElement = (element) => element.classList.add('hidden');
 
+    // formatDate defined but not used; keep for parity with other pages without lint warning
+    // eslint-disable-next-line no-unused-vars
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-CA').split('T')[0];
@@ -36,6 +38,7 @@ async function initTotalPrice() {
     endDateInput.value = currentDate;
 
     let selectedUnit = '';
+    void selectedUnit; // not used in this script currently
     hideElement(contentElement);
     hideElement(exportElement);
 

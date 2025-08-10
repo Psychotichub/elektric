@@ -32,10 +32,6 @@ function initReceived() {
     const showElement = (element) => element.classList.remove('hidden');
     const hideElement = (element) => element.classList.add('hidden');
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-CA');
-    };
 
     const currentDate = new Date().toLocaleDateString('en-CA').split('T')[0];
     dateInput.value = currentDate;

@@ -9,6 +9,7 @@ function initStock() {
     }
 
     const stock = document.getElementById('stock');
+    void stock; // avoid unused var warning, element used via query selectors below
     const tbody = document.querySelector('#stock tbody');
     const searchForm = document.getElementById('stock-search');
     const searchInput = document.getElementById('search');
@@ -180,4 +181,4 @@ function initStock() {
     });
 
     fetchAllData();
-};
+}

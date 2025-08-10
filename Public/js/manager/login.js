@@ -1,16 +1,8 @@
 // Manager Login JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    // Do NOT clear persistent tokens; only clear transient session token
-    try {
-        localStorage.removeItem('managerAccess');
-        localStorage.removeItem('managerSite');
-        localStorage.removeItem('managerCompany');
-        if (typeof sessionStorage !== 'undefined') {
-            sessionStorage.removeItem('token');
-        }
-    } catch (e) {
-        console.error('Failed to clear storage:', e);
-    }
+    // Clear any prior auth artifacts before showing the login page
+    try { localStorage.clear(); } catch (_) { /* ignore */ }
+    try { if (typeof sessionStorage !== 'undefined') { sessionStorage.clear(); } } catch (_) { /* ignore */ }
     
     const loginForm = document.getElementById('managerLoginForm');
     const messageDiv = document.getElementById('message');

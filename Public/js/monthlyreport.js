@@ -163,12 +163,12 @@ async function initMonthlyReport() {
         // Format the XLSX
         const range = XLSX.utils.decode_range(ws['!ref']);
         for (let C = range.s.c; C <= range.e.c; ++C) {
-            const address = XLSX.utils.encode_col(C) + "1";
+            const address = XLSX.utils.encode_col(C) + '1';
             if (!ws[address]) continue;
             ws[address].s = {
-                font: { bold: true, color: { rgb: "FFFFFF" } },
-                fill: { fgColor: { rgb: "4472C4" } },
-                alignment: { horizontal: "center" }
+                font: { bold: true, color: { rgb: 'FFFFFF' } },
+                fill: { fgColor: { rgb: '4472C4' } },
+                alignment: { horizontal: 'center' }
             };
         }
 

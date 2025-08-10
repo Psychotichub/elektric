@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+// Note: `User` is required lazily in specific code paths to avoid unused imports
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_only_for_development';

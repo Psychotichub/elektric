@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener('DOMContentLoaded', function() {
     fetch('/html/header.html')
         .then(response => response.text())
         .then(data => {
@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function displayCurrentDateTime() {
-    const dateContainer = document.getElementById("date-time");
+    const dateContainer = document.getElementById('date-time');
     if (dateContainer) {
         const now = new Date();
         const formattedDate = now.toLocaleDateString('sv-SE');
@@ -61,11 +61,13 @@ function setupLogout() {
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function() {
-            // Clear authentication data
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            
-            // Redirect to login page
+            if (typeof logout === 'function') {
+                logout('/login');
+                return;
+            }
+            // Fallback if utils not loaded
+            try { localStorage.clear(); } catch (_) { /* ignore */ }
+            try { sessionStorage.clear(); } catch (_) { /* ignore */ }
             window.location.href = '/login';
         });
     }

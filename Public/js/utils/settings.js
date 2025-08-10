@@ -163,9 +163,9 @@ class SettingsManager {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            // Clear local storage and redirect
-            localStorage.removeItem('token');
-            sessionStorage.removeItem('token');
+            // Clear all storage and redirect
+            try { localStorage.clear(); } catch (_) { /* ignore */ }
+            try { sessionStorage.clear(); } catch (_) { /* ignore */ }
             window.location.href = '/login';
         }
     }
