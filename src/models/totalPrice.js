@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { getDailyReportsByDateRange } = require('../controllers/dailyReportController');
 
 // Define the schema for daily report
 const totalPriceSchema = new mongoose.Schema({

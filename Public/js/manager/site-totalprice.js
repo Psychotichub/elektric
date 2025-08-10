@@ -585,118 +585,12 @@ async function openMaterialsWindow() {
             showMessage('Please select site and company first.', 'error');
             return;
         }
-
-        const token = (typeof getToken === 'function') ? getToken() : (sessionStorage.getItem('token') || localStorage.getItem('token'));
-        const url = `/api/manager/site/materials?site=${encodeURIComponent(site)}&company=${encodeURIComponent(company)}`;
-
-        const win = window.open('', '', 'width=900,height=650');
+        const url = `/manager-materials?site=${encodeURIComponent(site)}&company=${encodeURIComponent(company)}`;
+        const win = window.open(url, '', 'width=900,height=650');
         if (!win) {
             showMessage('Popup blocked. Please allow popups for this site.', 'error');
-            return;
         }
-
-        // Basic HTML skeleton
-        win.document.write(`
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Materials - ${site} / ${company}</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 16px; color: #111; }
-    h2 { margin: 0 0 12px; }
-    .meta { margin: 0 0 16px; color: #555; }
-    .filters { margin: 8px 0 16px; display: flex; gap: 12px; align-items: center; }
-    .filters label { font-size: 14px; color: #333; }
-    select { padding: 6px 8px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background: #f5f5f5; position: sticky; top: 0; }
-    tbody tr:nth-child(even) { background: #fafafa; }
-    .count { margin: 10px 0; font-weight: bold; }
-  </style>
-  </head>
-  <body>
-    <h2>Materials</h2>
-    <div class="meta">Site: <strong>${site}</strong> &nbsp; | &nbsp; Company: <strong>${company}</strong></div>
-    <div class="filters">
-      <label for="creatorFilter">Created By:</label>
-      <select id="creatorFilter" aria-label="Filter by creator"></select>
-    </div>
-    <div id="status">Loading materials...</div>
-    <div class="count" id="count"></div>
-    <div style="max-height: 70vh; overflow:auto;">
-      <table aria-label="Materials list">
-        <thead>
-          <tr>
-            <th>Material</th>
-            <th>Unit</th>
-            <th>Material Price</th>
-            <th>Labor Price</th>
-            <th>Created By</th>
-          </tr>
-        </thead>
-        <tbody id="materialsBody"><tr><td colspan="5">Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </body>
-</html>
-        `);
-        win.document.close();
-
-        // Fetch materials
-        const resp = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'X-Site': site,
-                'X-Company': company
-            }
-        });
-
-        if (!resp.ok) {
-            const txt = await resp.text();
-            win.document.getElementById('status').textContent = `Failed to load materials: ${resp.status} - ${txt}`;
-            return;
-        }
-
-        const data = await resp.json();
-        const materials = Array.isArray(data) ? data : (data.materials || []);
-
-        const statusEl = win.document.getElementById('status');
-        const countEl = win.document.getElementById('count');
-        const bodyEl = win.document.getElementById('materialsBody');
-        const filterEl = win.document.getElementById('creatorFilter');
-        statusEl.textContent = '';
-
-        // Build creator filter options
-        const creators = Array.from(new Set(materials.map(m => m.createdBy).filter(Boolean))).sort((a,b)=>String(a).localeCompare(String(b)));
-        filterEl.innerHTML = ['<option value="__all__">All</option>', ...creators.map(c=>`<option value="${c}">${c}</option>`)].join('');
-
-        const renderRows = (creator) => {
-            const filtered = (creator && creator !== '__all__') ? materials.filter(m => m.createdBy === creator) : materials;
-            countEl.textContent = `Total materials: ${filtered.length}`;
-            if (filtered.length === 0) {
-                bodyEl.innerHTML = '<tr><td colspan="5">No materials found.</td></tr>';
-                return;
-            }
-            bodyEl.innerHTML = filtered.map(m => `
-              <tr>
-                <td>${m.materialName || ''}</td>
-                <td>${m.unit || ''}</td>
-                <td>${Number(m.materialPrice || 0).toFixed(2)}</td>
-                <td>${Number(m.laborPrice || 0).toFixed(2)}</td>
-                <td>${m.createdBy || ''}</td>
-              </tr>
-            `).join('');
-        };
-
-        // Initial render
-        renderRows('__all__');
-        // Hook filter
-        filterEl.addEventListener('change', () => renderRows(filterEl.value));
     } catch (err) {
-        console.error('Failed to open materials window:', err);
         showMessage('Failed to open materials window.', 'error');
     }
 }
@@ -853,8 +747,7 @@ function exportToExcel() {
             'Total Quantity': `${item.quantity || 'N/A'} ${item.unit || ''}`,
             'Material Cost': `$${formatNumber(item.materialCost)}`,
             'Labor Cost': `$${formatNumber(item.laborCost)}`,
-            'Total Price': `$${formatNumber(item.totalPrice)}`,
-            'Location': item.location || 'N/A'
+            'Total Price': `$${formatNumber(item.totalPrice)}`
         }));
 
         // Add grand total row

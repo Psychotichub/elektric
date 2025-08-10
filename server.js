@@ -91,6 +91,11 @@ app.get('/manager-create-user', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager', 'create-user.html'));
 });
 
+// Manager materials popup page
+app.get('/manager-materials', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'Public', 'html', 'manager', 'materials.html'));
+});
+
 // Serve settings page
 app.get('/settings', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'Public', 'html', 'settings.html'));
