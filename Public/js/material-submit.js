@@ -45,10 +45,7 @@ async function initMaterialSubmit() {
         const noPermissionMessage = document.createElement('div');
         noPermissionMessage.className = 'alert alert-warning';
         noPermissionMessage.innerHTML = `
-            <h3>Access Restricted</h3>
             <p>Only site administrators can manage materials with pricing information.</p>
-            <p>You can view material names and units, and use existing materials from your site for daily reports and received reports.</p>
-            <p><strong>Note:</strong> Materials are shared across all users in your site. Pricing information is only visible to administrators.</p>
         `;
         materialForm.parentNode.insertBefore(noPermissionMessage, materialForm);
     } else if (materialForm && canAddMaterial) {

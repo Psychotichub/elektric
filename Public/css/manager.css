@@ -622,14 +622,16 @@ body .container {
 body.manager-materials {
     font-family: Arial, sans-serif;
     margin: 16px;
-    color: #111;
+    color: #000;
+    background-color: transparent;
 }
 .materials-title {
     margin: 0 0 12px;
+    color: #000;
 }
 .materials-meta {
     margin: 0 0 16px;
-    color: #555;
+    color: #000;
 }
 .materials-filters {
     margin: 8px 0 16px;
@@ -647,31 +649,59 @@ body.manager-materials {
 .materials-table-container {
     max-height: 70vh;
     overflow: auto;
+    border: 1px solid #e2e8f0; /* match materials.css border */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 .materials-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate; /* match materials.css */
+    border-spacing: 0;          /* match materials.css */
+    background: #f9f9f9;       /* match materials.css */
+}
+.materials-table thead {
+    background-color: #003366; /* dark header like materials.css */
+    color: #ffffff;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
 }
 .materials-table th,
 .materials-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
+    padding: 12px 15px;         /* match materials.css */
     text-align: left;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #e0e0e0;
 }
 .materials-table thead th {
-    background: #f5f5f5;
     position: sticky;
     top: 0;
+    z-index: 2;
+    background-color: #003366;  /* ensure sticky keeps header color */
 }
 .materials-table tbody tr:nth-child(even) {
-    background: #fafafa;
+    background-color: #f1f6fb;  /* zebra striping like materials.css */
+}
+.materials-table tbody tr:hover {
+    background-color: #e6f7ff;  /* hover like materials.css */
+    transition: background-color 0.3s ease;
+}
+.materials-table td:first-child {
+    font-weight: bold;           /* emphasize material name */
+}
+.materials-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .materials-count {
     margin: 10px 0;
     font-weight: bold;
+    color: #000;
 }
 .materials-status {
     margin-bottom: 8px;
+    color: #000;
 }
 
 .chart-card {

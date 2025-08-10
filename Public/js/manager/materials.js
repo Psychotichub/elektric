@@ -53,8 +53,8 @@
         <tr>
           <td>${m.materialName || ''}</td>
           <td>${m.unit || ''}</td>
-          <td>${Number(m.materialPrice || 0).toFixed(2)}</td>
-          <td>${Number(m.laborPrice || 0).toFixed(2)}</td>
+          <td>${Number(m.materialPrice || 0).toFixed(2)} €</td>
+          <td>${Number(m.laborPrice || 0).toFixed(2)} €</td>
           <td>${m.createdBy || ''}</td>
         </tr>
       `).join('');

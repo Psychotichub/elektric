@@ -84,6 +84,30 @@ function isAuthenticated() {
     return isAuth;
 }
 
+// Try to bootstrap auth from HTTP-only cookie by calling /api/auth/me
+async function checkCookieAuth() {
+    try {
+        const resp = await fetch('/api/auth/me', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+        if (!resp.ok) return false;
+        const data = await resp.json();
+        if (data && data.user) {
+            try { localStorage.setItem('user', JSON.stringify(data.user)); } catch (_) {}
+            // If server returns a token, persist it to avoid loops
+            if (data.token) {
+                try { localStorage.setItem('token', data.token); } catch (_) {}
+            }
+            return true;
+        }
+        return false;
+    } catch (_) {
+        return false;
+    }
+}
+
 // Function to check if current user has admin role
 function isAdmin() {
     const user = getCurrentUser();
@@ -302,18 +326,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const publicPages = ['/login', '/html/login.html'];
     
     // Add a small delay to ensure all scripts are loaded
-    setTimeout(() => {
-        // If the current page is not a public page and user is not authenticated
-        if (!publicPages.some(page => currentPage.includes(page)) && !isAuthenticated()) {
-            //console.log("Not authenticated, redirecting to login page");
-            // Redirect to login page
-            window.location.href = '/login';
-            return;
+    setTimeout(async () => {
+        const isPublic = publicPages.some(page => currentPage.includes(page));
+        const authed = isAuthenticated();
+
+        if (!isPublic && !authed) {
+            // Attempt to bootstrap from cookie session before redirecting
+            const cookieOk = await checkCookieAuth();
+            if (!cookieOk) {
+                window.location.href = '/login';
+                return;
+            }
         }
-        
-        // If authenticated, apply role-based UI changes
-        if (isAuthenticated()) {
-            //console.log("Authenticated, applying role-based UI changes");
+
+        // Apply role-based UI when authenticated either by token or cookie
+        if (isAuthenticated() || (!isPublic && localStorage.getItem('user'))) {
             applyRoleBasedUIChanges();
         }
     }, 100);
