@@ -799,20 +799,45 @@ function exportToExcel() {
             'Total Quantity': '',
             'Material Cost': `€${formatNumber(totalMaterialCost)}`,
             'Labor Cost': `€${formatNumber(totalLaborCost)}`,
-            'Total Price': `€${formatNumber(grandTotal)}`,
-            'Location': ''
+            'Total Price': `€${formatNumber(grandTotal)}`
         });
 
         // Create workbook and worksheet
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(excelData);
+        const selectedSite = document.getElementById('siteSelect')?.value || localStorage.getItem('managerSite') || 'unknown';
+        const selectedCompany = document.getElementById('companySelect')?.value || localStorage.getItem('managerCompany') || 'unknown';
+        const headerText = `Company: ${selectedCompany}    Site: ${selectedSite}`;
+
+        // Place data starting at A2 to leave room for a merged header row
+        const ws = XLSX.utils.json_to_sheet(excelData, { origin: 'A2' });
+        XLSX.utils.sheet_add_aoa(ws, [[headerText]], { origin: 'A1' });
+        // Merge header across 5 columns (A1:E1) to match table width
+        ws['!merges'] = (ws['!merges'] || []).concat([{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }]);
+
+        // Make A1 and header row (A2:E2) bold; also bold Material (A) and Total Price (E) values
+        try {
+            if (ws['A1']) ws['A1'].s = { font: { bold: true } };
+            ['A2','B2','C2','D2','E2'].forEach(cell => {
+                if (ws[cell]) {
+                    ws[cell].s = { font: { bold: true } };
+                }
+            });
+            if (ws['!ref']) {
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let r = 2; r <= range.e.r; r += 1) {
+                    const aCell = XLSX.utils.encode_cell({ r, c: 0 });
+                    const eCell = XLSX.utils.encode_cell({ r, c: 4 });
+                    if (ws[aCell]) ws[aCell].s = { ...(ws[aCell].s || {}), font: { ...(ws[aCell].s?.font || {}), bold: true } };
+                    if (ws[eCell]) ws[eCell].s = { ...(ws[eCell].s || {}), font: { ...(ws[eCell].s?.font || {}), bold: true } };
+                }
+            }
+        } catch (_) { /* styling may be ignored by some XLSX builds */ }
 
         // Add worksheet to workbook
         XLSX.utils.book_append_sheet(wb, ws, 'Manager Total Prices');
 
         // Generate filename
-        const selectedSite = document.getElementById('siteSelect')?.value || 'unknown';
-        const selectedCompany = document.getElementById('companySelect')?.value || 'unknown';
+        // Use the same selectedSite/selectedCompany captured above for filename
         const startDate = document.getElementById('startDate')?.value || 'unknown';
         const endDate = document.getElementById('endDate')?.value || 'unknown';
         const filename = `ManagerTotalPrices_${selectedSite}_${selectedCompany}_${startDate}_to_${endDate}.xlsx`;
